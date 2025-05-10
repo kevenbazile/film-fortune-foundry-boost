@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface FilmUploaderProps {
   filmFile: File | null;
@@ -35,7 +36,10 @@ const FilmUploader = ({
         return;
       }
       
-      handleFilmUploadClick(e);
+      // Directly trigger the file input click if authorized
+      if (filmFileInputRef.current) {
+        filmFileInputRef.current.click();
+      }
     };
     
     checkAuth();

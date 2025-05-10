@@ -4,6 +4,7 @@ import { supabase } from "./client";
 // This function checks if the required buckets exist and creates them if they don't
 export const ensureStorageBuckets = async () => {
   try {
+    console.log("Checking storage buckets...");
     // Check if films bucket exists
     const { data: buckets, error } = await supabase.storage.listBuckets();
     
@@ -13,6 +14,7 @@ export const ensureStorageBuckets = async () => {
     }
     
     const filmsExists = buckets.some(bucket => bucket.name === 'films');
+    console.log("Films bucket exists:", filmsExists);
     
     // If bucket doesn't exist, we'll check if user is authenticated before creating
     if (!filmsExists) {
@@ -24,30 +26,35 @@ export const ensureStorageBuckets = async () => {
         return;
       }
       
+      console.log("Creating films bucket...");
       // Create films bucket if it doesn't exist
       const { error: createError } = await supabase.storage.createBucket('films', {
         public: true,
-        fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
+        fileSizeLimit: 20 * 1024 * 1024, // Reduced to 20MB limit for better compatibility
       });
       
       if (createError) {
         console.error("Error creating films bucket:", createError);
       } else {
         console.log("Films bucket created successfully");
-        
-        // Add a public policy to the bucket
-        const { error: policyError } = await supabase.storage
-          .from('films')
-          .createSignedUrls(['test.txt'], 60); // This is just to trigger policy creation
-        
-        if (policyError && !policyError.message.includes("not found")) {
-          console.error("Error setting bucket policy:", policyError);
-        }
       }
     }
     
-    // If bucket exists, make sure we can access it
-    if (filmsExists) {
+    // If bucket exists or was just created, make sure it's publicly accessible
+    if (filmsExists || !error) {
+      console.log("Setting bucket to public...");
+      // Update bucket to be public if it exists
+      const { error: updateError } = await supabase.storage.updateBucket('films', {
+        public: true,
+        fileSizeLimit: 20 * 1024 * 1024, // 20MB limit
+      });
+      
+      if (updateError) {
+        console.error("Error updating films bucket:", updateError);
+      } else {
+        console.log("Films bucket updated to public");
+      }
+      
       // Test bucket access
       const { data: testAccess, error: testError } = await supabase.storage
         .from('films')
@@ -56,7 +63,7 @@ export const ensureStorageBuckets = async () => {
       if (testError) {
         console.error("Error accessing films bucket:", testError);
       } else {
-        console.log("Films bucket accessible");
+        console.log("Films bucket accessible, files found:", testAccess ? testAccess.length : 0);
       }
     }
     

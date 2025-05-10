@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
@@ -10,6 +10,7 @@ import { handleFileSelect, uploadFilesToStorage } from "./submission/fileUploadU
 import FilmUploader from "./submission/FilmUploader";
 import PromoUploader from "./submission/PromoUploader";
 import FilmDetailsForm from "./submission/FilmDetailsForm";
+import { ensureStorageBuckets } from "@/integrations/supabase/storage";
 
 const ProjectSubmission = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -18,6 +19,18 @@ const ProjectSubmission = () => {
   const [promoFiles, setPromoFiles] = useState<File[]>([]);
   const filmFileInputRef = useRef<HTMLInputElement>(null);
   const promoFileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Ensure storage buckets exist when component loads
+  useEffect(() => {
+    ensureStorageBuckets().catch(err => {
+      console.error("Failed to ensure storage buckets:", err);
+      toast({
+        title: "Storage Setup Error",
+        description: "There was an issue setting up file storage. Please try again later.",
+        variant: "destructive",
+      });
+    });
+  }, []);
   
   const form = useForm({
     defaultValues: {
@@ -41,12 +54,16 @@ const ProjectSubmission = () => {
 
   const handleFilmUploadClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent form submission
-    filmFileInputRef.current?.click();
+    if (filmFileInputRef.current) {
+      filmFileInputRef.current.click();
+    }
   };
 
   const handlePromoUploadClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent form submission
-    promoFileInputRef.current?.click();
+    if (promoFileInputRef.current) {
+      promoFileInputRef.current.click();
+    }
   };
 
   const onSubmit = async (formData: any) => {

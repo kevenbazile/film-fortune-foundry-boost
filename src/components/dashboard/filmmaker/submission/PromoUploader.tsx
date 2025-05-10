@@ -59,7 +59,10 @@ const PromoUploader = ({
         return;
       }
       
-      handlePromoUploadClick(e);
+      // Directly trigger the file input click if authorized
+      if (promoFileInputRef.current) {
+        promoFileInputRef.current.click();
+      }
     };
     
     checkAuth();
