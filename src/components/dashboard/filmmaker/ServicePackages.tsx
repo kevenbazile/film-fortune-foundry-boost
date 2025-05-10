@@ -1,58 +1,68 @@
 
 import React from "react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import ServicePackageCard from "@/components/ServicePackageCard";
 
 const ServicePackages = () => {
+  // Use the same package data as the home page to ensure consistency
   const packages = [
     {
       id: "basic",
       title: "Basic Distribution",
-      price: "$499",
+      price: "$250",
       features: [
-        "Digital distribution to 3 platforms",
-        "Basic marketing materials",
-        "Standard film encoding",
-        "90-day distribution cycle",
-        "Basic performance reports"
+        "Distribution to 3 free platforms",
+        "Basic SEO optimization",
+        "Standard thumbnail creation",
+        "Monthly performance reporting",
+        "25% commission on revenue",
       ],
-      platforms: ["Amazon Prime", "Tubi", "YouTube Premium"],
-      timeline: "30 days",
-      highlighted: false
-    },
-    {
-      id: "standard",
-      title: "Standard Distribution",
-      price: "$999",
-      features: [
-        "Digital distribution to 5 platforms",
-        "Custom trailer production",
-        "Professional film encoding",
-        "180-day distribution cycle",
-        "Monthly performance reports",
-        "Social media promotion package"
-      ],
-      platforms: ["Netflix", "Amazon Prime", "Hulu", "Tubi", "YouTube Premium"],
-      timeline: "21 days",
-      highlighted: true
+      platforms: ["YouTube", "Tubi", "SceneVox"],
+      timeline: "2 weeks",
+      highlighted: false,
     },
     {
       id: "premium",
       title: "Premium Distribution",
-      price: "$1,999",
+      price: "$500",
       features: [
-        "Digital distribution to 8+ platforms",
-        "Film festival submissions (5 included)",
+        "Distribution to 5 platforms",
+        "Custom trailer creation",
         "Press kit development",
-        "Professional trailer production",
-        "365-day distribution cycle",
-        "Weekly performance reports",
-        "Dedicated marketing campaign"
+        "2 film festival submissions",
+        "Social media package (5 posts)",
+        "20% commission on revenue",
       ],
-      platforms: ["Netflix", "Amazon Prime", "Hulu", "HBO Max", "Disney+", "Peacock", "Apple TV+", "Paramount+"],
-      timeline: "14 days",
-      highlighted: false
-    }
+      platforms: ["YouTube", "SceneVox", "Tubi", "Pluto TV"],
+      timeline: "3 weeks",
+      highlighted: true,
+    },
+    {
+      id: "elite",
+      title: "Elite Distribution",
+      price: "$1,000",
+      features: [
+        "Distribution to 7 platforms",
+        "Comprehensive marketing campaign",
+        "5 film festival submissions",
+        "Press outreach (10 outlets)",
+        "Complete social media campaign",
+        "Filmmaker feature interview",
+        "15% commission on revenue",
+      ],
+      platforms: [
+        "YouTube",
+        "SceneVox",
+        "Hulu",
+        "Tubi",
+        "Pluto TV", 
+        "Amazon Prime",
+        "Netflix",
+      ],
+      timeline: "4 weeks",
+      highlighted: false,
+    },
   ];
 
   return (
@@ -82,8 +92,5 @@ const ServicePackages = () => {
     </div>
   );
 };
-
-// Button is not being imported so we add it here to avoid errors
-import { Button } from "@/components/ui/button";
 
 export default ServicePackages;

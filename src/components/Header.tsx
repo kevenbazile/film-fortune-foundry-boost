@@ -1,16 +1,51 @@
 
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu } from "lucide-react";
+import { Menu, LogIn, User } from "lucide-react";
+import { toast } from "@/components/ui/use-toast";
 
 const Header = () => {
-  const navItems = [
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Check authentication status whenever component mounts or localStorage changes
+    const checkAuth = () => {
+      setIsAuthenticated(localStorage.getItem("isAuthenticated") === "true");
+    };
+
+    checkAuth();
+    window.addEventListener("storage", checkAuth);
+
+    return () => {
+      window.removeEventListener("storage", checkAuth);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("isAuthenticated");
+    setIsAuthenticated(false);
+    toast({
+      title: "Logged out",
+      description: "You have been successfully logged out",
+    });
+    navigate("/");
+  };
+
+  const publicNavItems = [
     { name: "Home", path: "/" },
     { name: "How It Works", path: "/how-it-works" },
-    { name: "Submit Film", path: "/dashboard" },
   ];
+
+  const authenticatedNavItems = [
+    { name: "Home", path: "/" },
+    { name: "How It Works", path: "/how-it-works" },
+    { name: "My Dashboard", path: "/dashboard" },
+  ];
+
+  const navItems = isAuthenticated ? authenticatedNavItems : publicNavItems;
 
   return (
     <header className="sticky top-0 z-50 bg-background border-b border-border/40 backdrop-blur-sm">
@@ -36,15 +71,28 @@ const Header = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/login">Login</Link>
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/signup">Sign Up</Link>
-            </Button>
-            <Button size="sm" variant="outline" className="ml-2" asChild>
-              <Link to="/dashboard">Filmmaker Dashboard</Link>
-            </Button>
+            {isAuthenticated ? (
+              <>
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  Logout
+                </Button>
+                <Button size="sm" asChild>
+                  <Link to="/dashboard">
+                    <User className="w-4 h-4 mr-2" />
+                    Dashboard
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="outline" size="sm" asChild>
+                  <Link to="/auth">
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Login / Sign Up
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Navigation */}
@@ -68,15 +116,26 @@ const Header = () => {
                     </Link>
                   ))}
                   <div className="pt-4 space-y-4">
-                    <Button variant="outline" className="w-full" asChild>
-                      <Link to="/login">Login</Link>
-                    </Button>
-                    <Button variant="outline" className="w-full" asChild>
-                      <Link to="/signup">Sign Up</Link>
-                    </Button>
-                    <Button className="w-full" asChild>
-                      <Link to="/dashboard">Filmmaker Dashboard</Link>
-                    </Button>
+                    {isAuthenticated ? (
+                      <>
+                        <Button variant="outline" className="w-full" onClick={handleLogout}>
+                          Logout
+                        </Button>
+                        <Button className="w-full" asChild>
+                          <Link to="/dashboard">
+                            <User className="w-4 h-4 mr-2" />
+                            Dashboard
+                          </Link>
+                        </Button>
+                      </>
+                    ) : (
+                      <Button className="w-full" asChild>
+                        <Link to="/auth">
+                          <LogIn className="w-4 h-4 mr-2" />
+                          Login / Sign Up
+                        </Link>
+                      </Button>
+                    )}
                   </div>
                 </nav>
               </SheetContent>
