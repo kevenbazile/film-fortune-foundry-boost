@@ -9,6 +9,7 @@ const Header = () => {
   const navItems = [
     { name: "Home", path: "/" },
     { name: "How It Works", path: "/how-it-works" },
+    { name: "Submit Film", path: "/dashboard" },
   ];
 
   return (
@@ -41,7 +42,9 @@ const Header = () => {
             <Button variant="outline" size="sm" asChild>
               <Link to="/signup">Sign Up</Link>
             </Button>
-            
+            <Button size="sm" variant="outline" className="ml-2" asChild>
+              <Link to="/dashboard">Filmmaker Dashboard</Link>
+            </Button>
           </div>
 
           {/* Mobile Navigation */}
@@ -72,7 +75,7 @@ const Header = () => {
                       <Link to="/signup">Sign Up</Link>
                     </Button>
                     <Button className="w-full" asChild>
-                      <Link to="/submit-film">Submit Film</Link>
+                      <Link to="/dashboard">Filmmaker Dashboard</Link>
                     </Button>
                   </div>
                 </nav>
