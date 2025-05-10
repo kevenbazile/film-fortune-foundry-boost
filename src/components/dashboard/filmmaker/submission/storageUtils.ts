@@ -14,7 +14,7 @@ export const ensureBucketExists = async () => {
       return false;
     }
     
-    const filmsExists = buckets.some(bucket => bucket.name === 'films');
+    const filmsExists = buckets.some(bucket => bucket.name === 'movie');
     if (!filmsExists) {
       console.error("Films bucket does not exist");
       return false;
@@ -80,7 +80,7 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
       
       console.log("Film uploaded successfully, getting public URL");
       const { data: filmUrlData } = supabase.storage
-        .from('films')
+        .from('movie')
         .getPublicUrl(filmFileName);
       
       filmUrl = filmUrlData.publicUrl;
@@ -97,7 +97,7 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
       const contentType = getContentType(promoFile.name);
       
       const { data: promoData, error: promoError } = await supabase.storage
-        .from('films')
+        .from('movie')
         .upload(promoFileName, promoFile, {
           cacheControl: '3600',
           upsert: true,
@@ -116,7 +116,7 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
       
       console.log("Promo file uploaded successfully, getting public URL");
       const { data: promoUrlData } = supabase.storage
-        .from('films')
+        .from('movie')
         .getPublicUrl(promoFileName);
       
       const url = promoUrlData.publicUrl;
@@ -142,7 +142,7 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
       
       console.log("Updating film record with URLs:", updateData);
       const { error: updateError } = await supabase
-        .from('films')
+        .from('movie')
         .update(updateData)
         .eq('id', filmId);
       
