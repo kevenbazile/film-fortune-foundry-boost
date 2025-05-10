@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ProjectSubmission from "@/components/dashboard/filmmaker/ProjectSubmission";
 import ServicePackages from "@/components/dashboard/filmmaker/ServicePackages";
@@ -7,17 +7,9 @@ import RevenueTracking from "@/components/dashboard/filmmaker/RevenueTracking";
 import PaymentStatus from "@/components/dashboard/filmmaker/PaymentStatus";
 import CommissionBreakdown from "@/components/dashboard/filmmaker/CommissionBreakdown";
 import DistributionTracker from "@/components/dashboard/filmmaker/DistributionTracker";
-import { ensureStorageBuckets } from "@/integrations/supabase/storage";
 
 const FilmmakerDashboard = () => {
   const [activeTab, setActiveTab] = useState("submission");
-
-  useEffect(() => {
-    // Ensure storage buckets exist when dashboard loads
-    ensureStorageBuckets().catch(err => {
-      console.error("Failed to ensure storage buckets:", err);
-    });
-  }, []);
 
   return (
     <div className="container mx-auto py-8 px-4">
