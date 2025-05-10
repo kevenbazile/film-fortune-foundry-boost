@@ -149,7 +149,7 @@ export const uploadFilesToStorage = async (userId: string, filmFile: File | null
     
     // Insert into films table
     if (filmUrl || promoUrls.length > 0) {
-      // Create film record
+      // Create film record with proper status type
       const filmData = {
         id: filmId,
         title: filmTitle || "Untitled Film",
@@ -157,9 +157,8 @@ export const uploadFilesToStorage = async (userId: string, filmFile: File | null
         director: userId, // Using user_id as director_id as requested
         film_url: filmUrl,
         poster_url: thumbnailUrl,
-        status: 'submitted',
-        submission_date: new Date().toISOString(),
-        genre: [], // Default empty array for genre
+        status: 'pending' as const, // Explicitly set as literal 'pending' type
+        genre: [] as string[], // Explicit empty array of strings
       };
       
       console.log("Inserting film record:", filmData);
