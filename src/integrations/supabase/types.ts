@@ -59,6 +59,41 @@ export type Database = {
           },
         ]
       }
+      film_assets: {
+        Row: {
+          asset_type: string
+          asset_url: string
+          created_at: string
+          film_id: string
+          id: string
+          mime_type: string
+        }
+        Insert: {
+          asset_type: string
+          asset_url: string
+          created_at?: string
+          film_id: string
+          id?: string
+          mime_type: string
+        }
+        Update: {
+          asset_type?: string
+          asset_url?: string
+          created_at?: string
+          film_id?: string
+          id?: string
+          mime_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "film_assets_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       films: {
         Row: {
           created_at: string

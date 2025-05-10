@@ -111,7 +111,7 @@ export const useFilmSubmission = () => {
       // Upload files if any are selected, even for drafts
       if (filmData && (filmFile || promoFiles.length > 0)) {
         try {
-          await uploadFilesToStorage(userId, filmData.id, filmFile, promoFiles);
+          await uploadFilesToStorage(userId, filmFile, promoFiles);
         } catch (uploadError: any) {
           console.error("Upload error:", uploadError);
           // Continue despite upload errors - the film record is already saved
@@ -161,40 +161,44 @@ export const useFilmSubmission = () => {
       // Convert main cast to array if it's a string
       const mainCastArray = values.mainCast.split(',').map(actor => actor.trim());
       
-      // Insert film into database
-      const { data: filmData, error: filmError } = await supabase
-        .from('films')
-        .insert({
-          title: values.title,
-          description: values.description,
-          director: values.director,
-          release_year: values.releaseYear,
-          genre: genresArray,
-          main_cast: mainCastArray,
-          user_id: userId,
-          duration: values.duration,
-          status: 'pending',
-        })
-        .select()
-        .single();
-      
-      if (filmError) {
-        console.error("Film submission error:", filmError);
-        toast({
-          title: "Submission Failed",
-          description: filmError.message,
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      // Upload files to storage
-      if (filmData && (filmFile || promoFiles.length > 0)) {
+      // Upload files to storage first
+      let uploadResult;
+      if (filmFile || promoFiles.length > 0) {
         try {
-          await uploadFilesToStorage(userId, filmData.id, filmFile, promoFiles);
+          uploadResult = await uploadFilesToStorage(userId, filmFile, promoFiles);
         } catch (uploadError: any) {
           console.error("Upload error:", uploadError);
-          // Continue despite upload errors - the film record is already saved
+          return;
+        }
+      }
+      
+      if (!uploadResult?.filmId) {
+        // If no files were uploaded or the upload process didn't generate a filmId
+        // The film record will be created in the database with basic info
+        const { data: filmData, error: filmError } = await supabase
+          .from('films')
+          .insert({
+            title: values.title,
+            description: values.description,
+            director: values.director,
+            release_year: values.releaseYear,
+            genre: genresArray,
+            main_cast: mainCastArray,
+            user_id: userId,
+            duration: values.duration,
+            status: 'pending',
+          })
+          .select()
+          .single();
+        
+        if (filmError) {
+          console.error("Film submission error:", filmError);
+          toast({
+            title: "Submission Failed",
+            description: filmError.message,
+            variant: "destructive",
+          });
+          return;
         }
       }
       

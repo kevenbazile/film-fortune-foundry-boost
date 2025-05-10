@@ -3,31 +3,31 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { getContentType } from "@/integrations/supabase/storage";
 
-// Ensure the films bucket exists
-export const ensureBucketExists = async () => {
+// Ensure the required buckets exist
+export const ensureBucketExists = async (bucketName: string) => {
   try {
     // Check if bucket exists
     const { data: buckets, error } = await supabase.storage.listBuckets();
     
     if (error) {
-      console.error("Error checking buckets:", error);
+      console.error(`Error checking buckets for ${bucketName}:`, error);
       return false;
     }
     
-    const filmsExists = buckets.some(bucket => bucket.name === 'movie');
-    if (!filmsExists) {
-      console.error("Films bucket does not exist");
+    const bucketExists = buckets.some(bucket => bucket.name === bucketName);
+    if (!bucketExists) {
+      console.error(`${bucketName} bucket does not exist`);
       return false;
     }
     
     return true;
   } catch (error) {
-    console.error("Error ensuring bucket exists:", error);
+    console.error(`Error ensuring ${bucketName} bucket exists:`, error);
     return false;
   }
 };
 
-export const uploadFilesToStorage = async (userId: string, filmId: string, filmFile: File | null, promoFiles: File[]) => {
+export const uploadFilesToStorage = async (userId: string, filmFile: File | null, promoFiles: File[]) => {
   try {
     console.log("Starting file upload process...");
     
@@ -42,21 +42,38 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
       throw new Error("Authentication required to upload files");
     }
     
-    // Check if the films bucket exists
-    const bucketExists = await ensureBucketExists();
-    if (!bucketExists) {
+    // Check if the movie bucket exists
+    const movieBucketExists = await ensureBucketExists('movie');
+    if (!movieBucketExists) {
       toast({
         title: "Storage Error",
-        description: "Cannot access storage. Please contact support.",
+        description: "Cannot access movie storage. Please contact support.",
         variant: "destructive",
       });
-      throw new Error("Films bucket does not exist");
+      throw new Error("Movie bucket does not exist");
     }
+    
+    // Check if the covers bucket exists
+    const coversBucketExists = await ensureBucketExists('covers');
+    if (!coversBucketExists) {
+      toast({
+        title: "Storage Error",
+        description: "Cannot access covers storage. Please contact support.",
+        variant: "destructive",
+      });
+      throw new Error("Covers bucket does not exist");
+    }
+    
+    // Generate a unique film ID
+    const filmId = crypto.randomUUID();
     
     // Upload film file if selected
     let filmUrl = "";
+    let filmTitle = "";
     if (filmFile) {
       console.log(`Uploading film file: ${filmFile.name}`);
+      // Extract title from filename (without extension)
+      filmTitle = filmFile.name.split('.').slice(0, -1).join('.');
       const filmFileName = `${userId}/${filmId}/${Date.now()}-${filmFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
       const contentType = getContentType(filmFile.name);
       
@@ -89,15 +106,16 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
     
     // Upload promotional files if any
     const promoUrls: string[] = [];
-    let posterUrl = "";
+    const promoMimeTypes: string[] = [];
+    let thumbnailUrl = "";
     
     for (const promoFile of promoFiles) {
       console.log(`Uploading promo file: ${promoFile.name}`);
-      const promoFileName = `${userId}/${filmId}/promo/${Date.now()}-${promoFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const promoFileName = `${userId}/${filmId}/${Date.now()}-${promoFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
       const contentType = getContentType(promoFile.name);
       
       const { data: promoData, error: promoError } = await supabase.storage
-        .from('movie')
+        .from('covers')
         .upload(promoFileName, promoFile, {
           cacheControl: '3600',
           upsert: true,
@@ -116,42 +134,76 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
       
       console.log("Promo file uploaded successfully, getting public URL");
       const { data: promoUrlData } = supabase.storage
-        .from('movie')
+        .from('covers')
         .getPublicUrl(promoFileName);
       
       const url = promoUrlData.publicUrl;
       promoUrls.push(url);
+      promoMimeTypes.push(contentType);
       
-      // Use first promotional image as poster
+      // Use first promotional image as thumbnail
       if (promoUrls.length === 1) {
-        posterUrl = url;
+        thumbnailUrl = url;
       }
     }
     
-    // Update film record with URLs
+    // Insert into films table
     if (filmUrl || promoUrls.length > 0) {
-      const updateData: any = {};
+      // Create film record
+      const filmData = {
+        id: filmId,
+        title: filmTitle || "Untitled Film",
+        user_id: userId,
+        director: userId, // Using user_id as director_id as requested
+        film_url: filmUrl,
+        poster_url: thumbnailUrl,
+        status: 'submitted',
+        submission_date: new Date().toISOString(),
+        genre: [], // Default empty array for genre
+      };
       
-      if (filmUrl) {
-        updateData.film_url = filmUrl;
-      }
+      console.log("Inserting film record:", filmData);
+      const { data: filmRecord, error: filmInsertError } = await supabase
+        .from('films')
+        .insert(filmData)
+        .select()
+        .single();
       
-      if (promoUrls.length > 0) {
-        updateData.poster_url = promoUrls[0]; // Use first promo image as poster
-      }
-      
-      console.log("Updating film record with URLs:", updateData);
-      const { error: updateError } = await supabase
-        .from('movie')
-        .update(updateData)
-        .eq('id', filmId);
-      
-      if (updateError) {
-        console.error("Film record update error:", updateError);
+      if (filmInsertError) {
+        console.error("Film record insertion error:", filmInsertError);
         toast({
-          title: "Update Warning",
-          description: `Failed to update film record: ${updateError.message}`,
+          title: "Database Error",
+          description: `Failed to save film record: ${filmInsertError.message}`,
+          variant: "destructive",
         });
+        throw filmInsertError;
+      }
+      
+      // Insert additional cover images into film_assets
+      if (promoUrls.length > 1) {
+        const assetInserts = promoUrls.slice(1).map((url, index) => ({
+          film_id: filmId,
+          asset_type: 'image',
+          asset_url: url,
+          mime_type: promoMimeTypes[index + 1] || 'image/jpeg'
+        }));
+        
+        if (assetInserts.length > 0) {
+          console.log("Inserting additional cover images:", assetInserts);
+          const { error: assetsError } = await supabase
+            .from('film_assets')
+            .insert(assetInserts);
+            
+          if (assetsError) {
+            console.error("Film assets insertion error:", assetsError);
+            toast({
+              title: "Warning",
+              description: `Some promotional images may not be properly linked: ${assetsError.message}`,
+              variant: "destructive",
+            });
+            // Continue despite error - main film record is saved
+          }
+        }
       }
     }
     
@@ -161,7 +213,7 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
       description: filmUrl ? "Film and promotional materials uploaded" : "Promotional materials uploaded",
     });
     
-    return { filmUrl, promoUrls };
+    return { filmId, filmUrl, thumbnailUrl, promoUrls };
   } catch (error: any) {
     console.error("File upload error:", error);
     toast({
