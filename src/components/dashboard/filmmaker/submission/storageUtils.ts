@@ -91,7 +91,7 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
     const promoUrls: string[] = [];
     let posterUrl = "";
     
-    for (const [index, promoFile] of promoFiles.entries()) {
+    for (const promoFile of promoFiles) {
       console.log(`Uploading promo file: ${promoFile.name}`);
       const promoFileName = `${userId}/${filmId}/promo/${Date.now()}-${promoFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
       const contentType = getContentType(promoFile.name);
@@ -119,25 +119,25 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
         .from('films')
         .getPublicUrl(promoFileName);
       
-      const promoUrl = promoUrlData.publicUrl;
-      promoUrls.push(promoUrl);
+      const url = promoUrlData.publicUrl;
+      promoUrls.push(url);
       
-      // Use first successful promo upload as poster URL
-      if (index === 0) {
-        posterUrl = promoUrl;
+      // Use first promotional image as poster
+      if (promoUrls.length === 1) {
+        posterUrl = url;
       }
     }
     
     // Update film record with URLs
-    if (filmUrl || posterUrl) {
+    if (filmUrl || promoUrls.length > 0) {
       const updateData: any = {};
       
       if (filmUrl) {
         updateData.film_url = filmUrl;
       }
       
-      if (posterUrl) {
-        updateData.poster_url = posterUrl;
+      if (promoUrls.length > 0) {
+        updateData.poster_url = promoUrls[0]; // Use first promo image as poster
       }
       
       console.log("Updating film record with URLs:", updateData);
@@ -161,7 +161,7 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
       description: filmUrl ? "Film and promotional materials uploaded" : "Promotional materials uploaded",
     });
     
-    return { filmUrl, posterUrl, promoUrls };
+    return { filmUrl, promoUrls };
   } catch (error: any) {
     console.error("File upload error:", error);
     toast({

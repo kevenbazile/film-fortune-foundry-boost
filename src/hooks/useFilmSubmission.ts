@@ -93,7 +93,7 @@ export const useFilmSubmission = () => {
           main_cast: mainCastArray,
           user_id: userId,
           duration: values.duration || 1,
-          status: 'pending', // Changed from 'draft' to 'pending' as per the valid enum values
+          status: 'pending', // Using 'pending' as per the valid enum values
         })
         .select()
         .single();
