@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -29,6 +30,8 @@ const FilmFormSchema = z.object({
   }),
 });
 
+export type FilmFormValues = z.infer<typeof FilmFormSchema>;
+
 export const useFilmSubmission = () => {
   const [filmFile, setFilmFile] = useState<File | null>(null);
   const [promoFiles, setPromoFiles] = useState<File[]>([]);
@@ -36,7 +39,7 @@ export const useFilmSubmission = () => {
   const [isDraftSaving, setIsDraftSaving] = useState(false);
   const navigate = useNavigate();
 
-  const form = useForm<z.infer<typeof FilmFormSchema>>({
+  const form = useForm<FilmFormValues>({
     resolver: zodResolver(FilmFormSchema),
     defaultValues: {
       title: "",
@@ -69,7 +72,7 @@ export const useFilmSubmission = () => {
     }
   };
 
-  const onSubmit = async (values: z.infer<typeof FilmFormSchema>) => {
+  const onSubmit = async (values: FilmFormValues) => {
     try {
       setIsSubmitting(true);
       
@@ -86,6 +89,11 @@ export const useFilmSubmission = () => {
       
       const userId = session.user.id;
       
+      // Convert genres string to array for database
+      const genresArray = values.genres.split(',').map(genre => genre.trim());
+      // Convert main cast to array if it's a string
+      const mainCastArray = values.mainCast.split(',').map(actor => actor.trim());
+      
       // Insert film into database
       const { data: filmData, error: filmError } = await supabase
         .from('films')
@@ -94,8 +102,8 @@ export const useFilmSubmission = () => {
           description: values.description,
           director: values.director,
           release_year: values.releaseYear,
-          genre: values.genres,
-          main_cast: values.mainCast?.split(',').map(actor => actor.trim()),
+          genre: genresArray,
+          main_cast: mainCastArray,
           user_id: userId,
           duration: values.duration,
         })
@@ -150,6 +158,6 @@ export const useFilmSubmission = () => {
     promoFiles,
     setPromoFiles,
     onSubmit,
-    saveDraft: async () => {}
+    saveDraft
   };
 };

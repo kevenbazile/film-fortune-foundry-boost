@@ -1,10 +1,10 @@
 
-import React, { useRef, useState } from "react";
+import React, { useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import UploadDropArea from "./UploadDropArea";
 import ImagePreviewGrid from "./ImagePreviewGrid";
-import { handleFileSelect } from "./fileUploadUtils";
+import { handleFileSelect, handleFileDrop } from "./fileSelectUtils";
 
 interface CoverArtUploaderProps {
   promoFiles: File[];
@@ -18,7 +18,7 @@ const CoverArtUploader: React.FC<CoverArtUploaderProps> = ({ promoFiles, onFiles
     handleFileSelect(
       e, 
       () => {}, // No single file to set
-      (files) => onFilesSelect(files),
+      (files) => onFilesSelect([...promoFiles, ...files]),
       true
     );
   };
@@ -30,6 +30,20 @@ const CoverArtUploader: React.FC<CoverArtUploaderProps> = ({ promoFiles, onFiles
     onFilesSelect(newPromoFiles);
   };
 
+  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileDrop(
+        e,
+        () => {}, // No single file to set
+        (files) => onFilesSelect([...promoFiles, ...files]),
+        true
+      );
+    }
+  };
+
   return (
     <div className="space-y-4">
       <Label>Upload Cover Art & Promotional Materials</Label>
@@ -39,27 +53,7 @@ const CoverArtUploader: React.FC<CoverArtUploaderProps> = ({ promoFiles, onFiles
         description="Supports JPEG, PNG (max 10MB each)"
         fileTypes="image/jpeg,image/png"
         onClick={() => promoFileInputRef.current?.click()}
-        onDrop={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            const dataTransfer = new DataTransfer();
-            
-            // Add existing files
-            promoFiles.forEach(file => dataTransfer.items.add(file));
-            
-            // Add new files
-            Array.from(e.dataTransfer.files).forEach(file => dataTransfer.items.add(file));
-            
-            // Create a synthetic event
-            const event = {
-              target: { files: dataTransfer.files }
-            } as React.ChangeEvent<HTMLInputElement>;
-            
-            handlePromoFilesSelect(event);
-          }
-        }}
+        onDrop={onDrop}
         onDragOver={(e) => {
           e.preventDefault();
           e.stopPropagation();

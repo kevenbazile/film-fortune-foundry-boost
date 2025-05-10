@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import UploadDropArea from "./UploadDropArea";
-import { handleFileSelect } from "./fileUploadUtils";
+import { handleFileSelect, handleFileDrop } from "./fileSelectUtils";
 
 interface FilmUploaderProps {
   filmFile: File | null;
@@ -29,6 +29,15 @@ const FilmUploader: React.FC<FilmUploaderProps> = ({ filmFile, onFileSelect }) =
     onFileSelect(null);
   };
   
+  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    handleFileDrop(
+      e,
+      (file) => onFileSelect(file),
+      () => {}, // No array of files to set
+      false
+    );
+  };
+  
   return (
     <div className="space-y-4">
       <Label>Upload Film Files</Label>
@@ -38,18 +47,7 @@ const FilmUploader: React.FC<FilmUploaderProps> = ({ filmFile, onFileSelect }) =
         description="Supports MP4, MOV, AVI, DVI (max 50MB)"
         fileTypes=".mp4,.mov,.avi,.dvi"
         onClick={() => filmFileInputRef.current?.click()}
-        onDrop={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          
-          if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            const event = {
-              target: { files: e.dataTransfer.files }
-            } as React.ChangeEvent<HTMLInputElement>;
-            
-            handleFilmFileSelect(event);
-          }
-        }}
+        onDrop={onDrop}
         onDragOver={(e) => {
           e.preventDefault();
           e.stopPropagation();
