@@ -42,7 +42,7 @@ export const uploadFilesToStorage = async (userId: string, filmFile: File | null
       throw new Error("Authentication required to upload files");
     }
     
-    // Check if the movie bucket exists
+    // Check if the movie bucket exists - use lowercase 'movie'
     const movieBucketExists = await ensureBucketExists('movie');
     if (!movieBucketExists) {
       toast({
@@ -53,7 +53,7 @@ export const uploadFilesToStorage = async (userId: string, filmFile: File | null
       throw new Error("Movie bucket does not exist");
     }
     
-    // Check if the covers bucket exists
+    // Check if the covers bucket exists - use lowercase 'covers'
     const coversBucketExists = await ensureBucketExists('covers');
     if (!coversBucketExists) {
       toast({
@@ -77,6 +77,7 @@ export const uploadFilesToStorage = async (userId: string, filmFile: File | null
       const filmFileName = `${userId}/${filmId}/${Date.now()}-${filmFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
       const contentType = getContentType(filmFile.name);
       
+      // Use lowercase 'movie' bucket
       const { data: filmData, error: filmError } = await supabase.storage
         .from('movie')
         .upload(filmFileName, filmFile, {
@@ -96,6 +97,7 @@ export const uploadFilesToStorage = async (userId: string, filmFile: File | null
       }
       
       console.log("Film uploaded successfully, getting public URL");
+      // Use lowercase 'movie' bucket
       const { data: filmUrlData } = supabase.storage
         .from('movie')
         .getPublicUrl(filmFileName);
@@ -114,6 +116,7 @@ export const uploadFilesToStorage = async (userId: string, filmFile: File | null
       const promoFileName = `${userId}/${filmId}/${Date.now()}-${promoFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
       const contentType = getContentType(promoFile.name);
       
+      // Use lowercase 'covers' bucket
       const { data: promoData, error: promoError } = await supabase.storage
         .from('covers')
         .upload(promoFileName, promoFile, {
@@ -133,6 +136,7 @@ export const uploadFilesToStorage = async (userId: string, filmFile: File | null
       }
       
       console.log("Promo file uploaded successfully, getting public URL");
+      // Use lowercase 'covers' bucket
       const { data: promoUrlData } = supabase.storage
         .from('covers')
         .getPublicUrl(promoFileName);
