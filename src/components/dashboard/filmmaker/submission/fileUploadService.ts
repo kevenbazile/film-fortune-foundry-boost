@@ -4,6 +4,7 @@ import { toast } from "@/components/ui/use-toast";
 import { ensureBucketExists } from "./bucketUtils";
 import { uploadFileToStorage } from "./uploadUtils";
 import { createFilmRecord, addFilmAssets } from "./filmDatabase";
+import { ensureStorageBuckets } from "@/integrations/supabase/storage";
 
 export const uploadFilesToStorage = async (userId: string, filmFile: File | null, promoFiles: File[]) => {
   try {
@@ -19,6 +20,9 @@ export const uploadFilesToStorage = async (userId: string, filmFile: File | null
       });
       throw new Error("Authentication required to upload files");
     }
+    
+    // Ensure storage buckets exist before uploading
+    await ensureStorageBuckets();
     
     // Check if the movie bucket exists - use lowercase 'movie'
     const movieBucketExists = await ensureBucketExists('movie');
