@@ -12,7 +12,7 @@ export const uploadFileToStorage = async (
     const contentType = getContentType(file.name);
     
     const { data, error } = await supabase.storage
-      .from(movie)
+      .from(bucket)
       .upload(path, file, {
         cacheControl: '3600',
         upsert: true,
