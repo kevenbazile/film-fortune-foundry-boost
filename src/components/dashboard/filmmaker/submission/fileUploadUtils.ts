@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { getContentType } from "@/integrations/supabase/storage";
 
 export const handleFileSelect = (
   e: React.ChangeEvent<HTMLInputElement>, 
@@ -11,7 +12,12 @@ export const handleFileSelect = (
   e.preventDefault();
   const files = e.target.files;
   
-  if (!files || files.length === 0) return;
+  if (!files || files.length === 0) {
+    if (!isMultiple) {
+      setFile(null);
+    }
+    return;
+  }
   
   // Check authentication first
   supabase.auth.getSession().then(({ data: { session } }) => {
@@ -26,26 +32,45 @@ export const handleFileSelect = (
     
     // Check file size
     const maxSize = isMultiple ? 10 * 1024 * 1024 : 50 * 1024 * 1024; // 10MB for images, 50MB for video
-    for (let i = 0; i < files.length; i++) {
-      if (files[i].size > maxSize) {
+    
+    if (isMultiple) {
+      const validFiles: File[] = [];
+      const invalidFiles: string[] = [];
+      
+      for (let i = 0; i < files.length; i++) {
+        if (files[i].size > maxSize) {
+          invalidFiles.push(`${files[i].name} (exceeds 10MB)`);
+        } else {
+          validFiles.push(files[i]);
+        }
+      }
+      
+      if (invalidFiles.length > 0) {
+        toast({
+          title: "Some files couldn't be added",
+          description: invalidFiles.join(', '),
+          variant: "destructive",
+        });
+      }
+      
+      if (validFiles.length > 0) {
+        setFiles(prevFiles => [...prevFiles, ...validFiles]);
+        toast({
+          title: "Files Selected",
+          description: `Added ${validFiles.length} file(s)`,
+        });
+      }
+    } else {
+      if (files[0].size > maxSize) {
         const sizeMB = (maxSize / (1024 * 1024)).toFixed(0);
         toast({
           title: "File Too Large",
-          description: `${files[i].name} exceeds the maximum file size (${sizeMB}MB)`,
+          description: `${files[0].name} exceeds the maximum file size (${sizeMB}MB)`,
           variant: "destructive",
         });
         return;
       }
-    }
-    
-    if (isMultiple) {
-      const newFiles = Array.from(files);
-      setFiles(prevFiles => [...prevFiles, ...newFiles]);
-      toast({
-        title: "Files Selected",
-        description: `Added ${files.length} file(s)`,
-      });
-    } else {
+      
       setFile(files[0]);
       toast({
         title: "File Selected",
@@ -92,12 +117,14 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
     if (filmFile) {
       console.log(`Uploading film file: ${filmFile.name}`);
       const filmFileName = `${userId}/${filmId}/${Date.now()}-${filmFile.name}`;
+      const contentType = getContentType(filmFile.name);
+      
       const { data: filmData, error: filmError } = await supabase.storage
         .from('films')
         .upload(filmFileName, filmFile, {
           cacheControl: '3600',
           upsert: true,
-          contentType: filmFile.type // Add content type
+          contentType
         });
       
       if (filmError) {
@@ -124,12 +151,14 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
     for (const promoFile of promoFiles) {
       console.log(`Uploading promo file: ${promoFile.name}`);
       const promoFileName = `${userId}/${filmId}/promo/${Date.now()}-${promoFile.name}`;
+      const contentType = getContentType(promoFile.name);
+      
       const { data: promoData, error: promoError } = await supabase.storage
         .from('films')
         .upload(promoFileName, promoFile, {
           cacheControl: '3600',
           upsert: true,
-          contentType: promoFile.type // Add content type
+          contentType
         });
       
       if (promoError) {

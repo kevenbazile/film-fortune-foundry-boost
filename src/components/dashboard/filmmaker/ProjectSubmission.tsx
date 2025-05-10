@@ -54,16 +54,42 @@ const ProjectSubmission = () => {
 
   const handleFilmUploadClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent form submission
-    if (filmFileInputRef.current) {
-      filmFileInputRef.current.click();
-    }
+    
+    // Check authentication
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to upload files",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (filmFileInputRef.current) {
+        filmFileInputRef.current.click();
+      }
+    });
   };
 
   const handlePromoUploadClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent form submission
-    if (promoFileInputRef.current) {
-      promoFileInputRef.current.click();
-    }
+    
+    // Check authentication
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to upload files",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      if (promoFileInputRef.current) {
+        promoFileInputRef.current.click();
+      }
+    });
   };
 
   const onSubmit = async (formData: any) => {

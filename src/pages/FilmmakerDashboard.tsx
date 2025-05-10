@@ -14,7 +14,9 @@ const FilmmakerDashboard = () => {
 
   useEffect(() => {
     // Ensure storage buckets exist when dashboard loads
-    ensureStorageBuckets();
+    ensureStorageBuckets().catch(err => {
+      console.error("Failed to ensure storage buckets:", err);
+    });
   }, []);
 
   return (
