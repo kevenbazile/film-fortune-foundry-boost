@@ -3,14 +3,14 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, LogIn, User } from "lucide-react";
+import { Menu, LogIn, User as UserIcon } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Session, User } from "@supabase/supabase-js";
+import { Session, User as SupabaseUser } from "@supabase/supabase-js";
 
 const Header = () => {
   const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -98,7 +98,7 @@ const Header = () => {
                 </Button>
                 <Button size="sm" asChild>
                   <Link to="/dashboard">
-                    <User className="w-4 h-4 mr-2" />
+                    <UserIcon className="w-4 h-4 mr-2" />
                     Dashboard
                   </Link>
                 </Button>
@@ -143,7 +143,7 @@ const Header = () => {
                         </Button>
                         <Button className="w-full" asChild>
                           <Link to="/dashboard">
-                            <User className="w-4 h-4 mr-2" />
+                            <UserIcon className="w-4 h-4 mr-2" />
                             Dashboard
                           </Link>
                         </Button>

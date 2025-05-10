@@ -9,7 +9,7 @@ import { toast } from "@/components/ui/use-toast";
 interface Service {
   id: string;
   name: string;
-  price: string;
+  price: string | number;
   description: string;
   features: string[];
   platforms: string[];
@@ -18,8 +18,20 @@ interface Service {
   commission_rate: number;
 }
 
+interface ServicePackage {
+  id: string;
+  title: string;
+  price: string;
+  description: string;
+  features: string[];
+  platforms: string[];
+  timeline: string;
+  highlighted: boolean;
+  commission_rate: number;
+}
+
 const ServicePackages = () => {
-  const [services, setServices] = useState<Service[]>([]);
+  const [services, setServices] = useState<ServicePackage[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,11 +46,12 @@ const ServicePackages = () => {
         }
         
         // Format the data to match what the ServicePackageCard component expects
-        const formattedServices = data.map(service => ({
+        const formattedServices: ServicePackage[] = data.map(service => ({
           id: service.id,
           title: service.name,
           price: `$${service.price}`,
-          features: Array.isArray(service.features) ? service.features : service.features,
+          features: Array.isArray(service.features) ? service.features : 
+                  (typeof service.features === 'object' ? Object.values(service.features) : []),
           platforms: service.platforms,
           timeline: `${service.timeline_days} days`,
           highlighted: service.is_highlighted,
