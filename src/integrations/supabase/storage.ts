@@ -5,6 +5,8 @@ import { supabase } from "./client";
 export const ensureStorageBuckets = async () => {
   try {
     console.log("Checking storage buckets...");
+    
+    // First check if buckets exist
     const { data: buckets, error } = await supabase.storage.listBuckets();
     
     if (error) {
@@ -12,7 +14,7 @@ export const ensureStorageBuckets = async () => {
       return;
     }
     
-    // Check if movie bucket exists - use lowercase 'movie'
+    // Check if movie bucket exists
     const movieExists = buckets.some(bucket => bucket.name === 'movie');
     console.log("Movie bucket exists:", movieExists);
     
@@ -21,13 +23,25 @@ export const ensureStorageBuckets = async () => {
       console.log("Creating movie bucket...");
       const { error: createError } = await supabase.storage.createBucket('movie', {
         public: true,
-        fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
+        fileSizeLimit: 100 * 1024 * 1024, // 100MB limit
       });
       
       if (createError) {
         console.error("Error creating movie bucket:", createError);
       } else {
         console.log("Movie bucket created successfully");
+      }
+    } else {
+      // Update existing movie bucket to ensure it's public
+      const { error: updateError } = await supabase.storage.updateBucket('movie', {
+        public: true,
+        fileSizeLimit: 100 * 1024 * 1024, // 100MB limit
+      });
+      
+      if (updateError) {
+        console.error("Error updating movie bucket:", updateError);
+      } else {
+        console.log("Movie bucket updated to public with 100MB limit");
       }
     }
     
@@ -48,23 +62,8 @@ export const ensureStorageBuckets = async () => {
       } else {
         console.log("Covers bucket created successfully");
       }
-    }
-    
-    // Make sure buckets are public
-    if (movieExists || (!movieExists && !error)) {
-      const { error: updateError } = await supabase.storage.updateBucket('movie', {
-        public: true,
-        fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
-      });
-      
-      if (updateError) {
-        console.error("Error updating movie bucket:", updateError);
-      } else {
-        console.log("Movie bucket updated to public");
-      }
-    }
-    
-    if (coversExists || (!coversExists && !error)) {
+    } else {
+      // Update existing covers bucket to ensure it's public
       const { error: coversUpdateError } = await supabase.storage.updateBucket('covers', {
         public: true,
         fileSizeLimit: 10 * 1024 * 1024, // 10MB limit
@@ -73,9 +72,22 @@ export const ensureStorageBuckets = async () => {
       if (coversUpdateError) {
         console.error("Error updating covers bucket:", coversUpdateError);
       } else {
-        console.log("Covers bucket updated to public");
+        console.log("Covers bucket updated to public with 10MB limit");
       }
     }
+    
+    // Trigger a manual check after creation to confirm buckets exist
+    setTimeout(async () => {
+      const { data: checkBuckets, error: checkError } = await supabase.storage.listBuckets();
+      
+      if (checkError) {
+        console.error("Error checking buckets after creation:", checkError);
+        return;
+      }
+      
+      console.log("Available buckets after creation:", 
+        checkBuckets.map(b => `${b.name} (public: ${b.public})`).join(', '));
+    }, 1000);
     
   } catch (error) {
     console.error("Storage initialization error:", error);

@@ -22,7 +22,13 @@ const queryClient = new QueryClient();
 const AppContent = () => {
   // Initialize storage buckets when app starts
   useEffect(() => {
-    ensureStorageBuckets();
+    const initializeStorage = async () => {
+      console.log("Initializing storage buckets...");
+      await ensureStorageBuckets();
+      console.log("Storage initialization completed");
+    };
+
+    initializeStorage();
   }, []);
 
   return (
