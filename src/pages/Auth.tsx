@@ -7,10 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login");
+  const [loading, setLoading] = useState(false);
   
   // Login form state
   const [loginEmail, setLoginEmail] = useState("");
@@ -22,30 +24,48 @@ const Auth = () => {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupConfirmPassword, setSignupConfirmPassword] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // This is a simplified login for now
-    // In a real application, you would verify credentials with a backend
-    if (loginEmail && loginPassword) {
-      // Mock successful login
-      localStorage.setItem("isAuthenticated", "true");
-      toast({
-        title: "Login successful",
-        description: "Welcome back to Film Fortune Foundry",
-      });
-      navigate("/dashboard");
-    } else {
+    
+    if (!loginEmail || !loginPassword) {
       toast({
         title: "Login failed",
         description: "Please enter both email and password",
         variant: "destructive",
       });
+      return;
+    }
+    
+    try {
+      setLoading(true);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
+        password: loginPassword
+      });
+
+      if (error) throw error;
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back to Film Fortune Foundry",
+      });
+      
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast({
+        title: "Login failed",
+        description: error.message || "An error occurred during login",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    // This is a simplified signup for now
+    
     if (!signupName || !signupEmail || !signupPassword) {
       toast({
         title: "Signup failed",
@@ -64,13 +84,42 @@ const Auth = () => {
       return;
     }
 
-    // Mock successful signup
-    localStorage.setItem("isAuthenticated", "true");
-    toast({
-      title: "Signup successful",
-      description: "Welcome to Film Fortune Foundry",
-    });
-    navigate("/dashboard");
+    try {
+      setLoading(true);
+      
+      // Split the full name into first and last name
+      const nameParts = signupName.trim().split(/\s+/);
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+      
+      const { data, error } = await supabase.auth.signUp({
+        email: signupEmail,
+        password: signupPassword,
+        options: {
+          data: {
+            first_name: firstName,
+            last_name: lastName
+          }
+        }
+      });
+
+      if (error) throw error;
+      
+      toast({
+        title: "Signup successful",
+        description: "Welcome to Film Fortune Foundry",
+      });
+      
+      navigate("/dashboard");
+    } catch (error: any) {
+      toast({
+        title: "Signup failed",
+        description: error.message || "An error occurred during signup",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -106,6 +155,7 @@ const Auth = () => {
                       value={loginEmail}
                       onChange={(e) => setLoginEmail(e.target.value)}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -121,9 +171,12 @@ const Auth = () => {
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
+                      disabled={loading}
                     />
                   </div>
-                  <Button type="submit" className="w-full">Login</Button>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Logging in..." : "Login"}
+                  </Button>
                 </form>
               </TabsContent>
               
@@ -137,6 +190,7 @@ const Auth = () => {
                       value={signupName}
                       onChange={(e) => setSignupName(e.target.value)}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -148,6 +202,7 @@ const Auth = () => {
                       value={signupEmail}
                       onChange={(e) => setSignupEmail(e.target.value)}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -158,6 +213,7 @@ const Auth = () => {
                       value={signupPassword}
                       onChange={(e) => setSignupPassword(e.target.value)}
                       required
+                      disabled={loading}
                     />
                   </div>
                   <div className="space-y-2">
@@ -168,9 +224,12 @@ const Auth = () => {
                       value={signupConfirmPassword}
                       onChange={(e) => setSignupConfirmPassword(e.target.value)}
                       required
+                      disabled={loading}
                     />
                   </div>
-                  <Button type="submit" className="w-full">Create Account</Button>
+                  <Button type="submit" className="w-full" disabled={loading}>
+                    {loading ? "Creating account..." : "Create Account"}
+                  </Button>
                 </form>
               </TabsContent>
             </Tabs>

@@ -1,69 +1,66 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import ServicePackageCard from "@/components/ServicePackageCard";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
+
+interface Service {
+  id: string;
+  name: string;
+  price: string;
+  description: string;
+  features: string[];
+  platforms: string[];
+  timeline_days: number;
+  is_highlighted: boolean;
+  commission_rate: number;
+}
 
 const ServicePackages = () => {
-  // Use the same package data as the home page to ensure consistency
-  const packages = [
-    {
-      id: "basic",
-      title: "Basic Distribution",
-      price: "$250",
-      features: [
-        "Distribution to 3 free platforms",
-        "Basic SEO optimization",
-        "Standard thumbnail creation",
-        "Monthly performance reporting",
-        "25% commission on revenue",
-      ],
-      platforms: ["YouTube", "Tubi", "SceneVox"],
-      timeline: "2 weeks",
-      highlighted: false,
-    },
-    {
-      id: "premium",
-      title: "Premium Distribution",
-      price: "$500",
-      features: [
-        "Distribution to 5 platforms",
-        "Custom trailer creation",
-        "Press kit development",
-        "2 film festival submissions",
-        "Social media package (5 posts)",
-        "20% commission on revenue",
-      ],
-      platforms: ["YouTube", "SceneVox", "Tubi", "Pluto TV"],
-      timeline: "3 weeks",
-      highlighted: true,
-    },
-    {
-      id: "elite",
-      title: "Elite Distribution",
-      price: "$1,000",
-      features: [
-        "Distribution to 7 platforms",
-        "Comprehensive marketing campaign",
-        "5 film festival submissions",
-        "Press outreach (10 outlets)",
-        "Complete social media campaign",
-        "Filmmaker feature interview",
-        "15% commission on revenue",
-      ],
-      platforms: [
-        "YouTube",
-        "SceneVox",
-        "Hulu",
-        "Tubi",
-        "Pluto TV", 
-        "Amazon Prime",
-        "Netflix",
-      ],
-      timeline: "4 weeks",
-      highlighted: false,
-    },
-  ];
+  const [services, setServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('services')
+          .select('*');
+        
+        if (error) {
+          throw error;
+        }
+        
+        // Format the data to match what the ServicePackageCard component expects
+        const formattedServices = data.map(service => ({
+          id: service.id,
+          title: service.name,
+          price: `$${service.price}`,
+          features: Array.isArray(service.features) ? service.features : service.features,
+          platforms: service.platforms,
+          timeline: `${service.timeline_days} days`,
+          highlighted: service.is_highlighted,
+          description: service.description,
+          commission_rate: service.commission_rate
+        }));
+        
+        setServices(formattedServices);
+      } catch (error) {
+        console.error('Error fetching services:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load service packages",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchServices();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -74,11 +71,19 @@ const ServicePackages = () => {
         </p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        {packages.map((pkg) => (
-          <ServicePackageCard key={pkg.id} package={pkg} />
-        ))}
-      </div>
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[1, 2, 3].map((i) => (
+            <Card key={i} className="w-full h-96 animate-pulse"></Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {services.map((service) => (
+            <ServicePackageCard key={service.id} package={service} />
+          ))}
+        </div>
+      )}
       
       <div className="mt-8 p-4 bg-muted rounded-lg">
         <h3 className="text-lg font-semibold mb-2">Need a Custom Package?</h3>

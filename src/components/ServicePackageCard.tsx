@@ -9,10 +9,12 @@ interface ServicePackage {
   id: string;
   title: string;
   price: string;
-  features: string[];
+  description?: string;
+  features: string[] | any;
   platforms: string[];
   timeline: string;
   highlighted: boolean;
+  commission_rate?: number;
 }
 
 interface ServicePackageCardProps {
@@ -20,6 +22,13 @@ interface ServicePackageCardProps {
 }
 
 const ServicePackageCard = ({ package: pkg }: ServicePackageCardProps) => {
+  // Handle features that might be a JSONB array from the database
+  const featuresArray = typeof pkg.features === 'string' 
+    ? JSON.parse(pkg.features) 
+    : Array.isArray(pkg.features)
+      ? pkg.features
+      : Object.values(pkg.features || {});
+
   return (
     <Card 
       className={`h-full flex flex-col ${pkg.highlighted ? 'ring-2 ring-primary relative' : ''}`}
@@ -41,6 +50,12 @@ const ServicePackageCard = ({ package: pkg }: ServicePackageCardProps) => {
             Turnaround time: {pkg.timeline}
           </p>
           
+          {pkg.commission_rate && (
+            <p className="font-medium text-center text-sm text-muted-foreground mb-4">
+              Commission rate: {pkg.commission_rate}%
+            </p>
+          )}
+          
           <div className="text-sm font-semibold mb-2">Included Platforms:</div>
           <div className="flex flex-wrap gap-2 mb-6">
             {pkg.platforms.map((platform, idx) => (
@@ -52,7 +67,7 @@ const ServicePackageCard = ({ package: pkg }: ServicePackageCardProps) => {
           
           <div className="text-sm font-semibold mb-2">Package Features:</div>
           <ul className="space-y-2">
-            {pkg.features.map((feature, idx) => (
+            {featuresArray.map((feature, idx) => (
               <li key={idx} className="flex items-start gap-2">
                 <Check className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                 <span className="text-sm">{feature}</span>
