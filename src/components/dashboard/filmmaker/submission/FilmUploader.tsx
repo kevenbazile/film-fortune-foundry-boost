@@ -3,6 +3,7 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface FilmUploaderProps {
   filmFile: File | null;
@@ -31,7 +32,7 @@ const FilmUploader = ({
             Drag and drop your film file here, or click to browse
           </p>
           <p className="text-xs text-muted-foreground">
-            Supports MP4, MOV, AVI, DVI (max 100MB)
+            Supports MP4, MOV, AVI, DVI (max 50MB)
           </p>
           <Input 
             ref={filmFileInputRef}
@@ -42,9 +43,24 @@ const FilmUploader = ({
             accept=".mp4,.mov,.avi,.dvi"
           />
           {filmFile && (
-            <p className="text-sm font-medium text-primary">
-              Selected: {filmFile.name} ({(filmFile.size / (1024 * 1024)).toFixed(2)} MB)
-            </p>
+            <div className="mt-2">
+              <p className="text-sm font-medium text-primary">
+                Selected: {filmFile.name} ({(filmFile.size / (1024 * 1024)).toFixed(2)} MB)
+              </p>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="sm" 
+                className="mt-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  filmFileInputRef.current!.value = '';
+                  handleFilmFileSelect({ target: { files: null } } as any);
+                }}
+              >
+                Remove
+              </Button>
+            </div>
           )}
         </div>
       </div>

@@ -2,7 +2,8 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Upload } from "lucide-react";
+import { Upload, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface PromoUploaderProps {
   promoFiles: File[];
@@ -17,6 +18,29 @@ const PromoUploader = ({
   handlePromoFilesSelect,
   handlePromoUploadClick
 }: PromoUploaderProps) => {
+  // Function to handle removing a specific file
+  const handleRemoveFile = (e: React.MouseEvent, index: number) => {
+    e.stopPropagation();
+    const newPromoFiles = [...promoFiles];
+    newPromoFiles.splice(index, 1);
+    
+    // Create a new DataTransfer object
+    const dataTransfer = new DataTransfer();
+    
+    // Add the remaining files to the DataTransfer object
+    newPromoFiles.forEach(file => {
+      dataTransfer.items.add(file);
+    });
+    
+    // Update the input's files
+    if (promoFileInputRef.current) {
+      promoFileInputRef.current.files = dataTransfer.files;
+    }
+    
+    // Trigger the onChange event
+    handlePromoFilesSelect({ target: { files: dataTransfer.files } } as any);
+  };
+
   return (
     <div className="space-y-4">
       <Label>Upload Cover Art & Promotional Materials</Label>
@@ -43,12 +67,21 @@ const PromoUploader = ({
             multiple 
           />
           {promoFiles.length > 0 && (
-            <div className="text-sm font-medium text-primary">
+            <div className="text-sm font-medium text-primary mt-2 w-full">
               <p>Selected: {promoFiles.length} file(s)</p>
-              <ul className="mt-2 text-xs max-h-20 overflow-auto">
+              <ul className="mt-2 text-xs max-h-32 overflow-auto w-full">
                 {promoFiles.map((file, index) => (
-                  <li key={index}>
-                    {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                  <li key={index} className="flex justify-between items-center py-1 border-b">
+                    <span>{file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)</span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={(e) => handleRemoveFile(e, index)}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
                   </li>
                 ))}
               </ul>

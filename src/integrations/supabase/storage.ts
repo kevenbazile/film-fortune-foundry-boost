@@ -18,9 +18,7 @@ export const ensureStorageBuckets = async () => {
     if (!filmsExists) {
       const { error: createError } = await supabase.storage.createBucket('films', {
         public: true,
-        fileSizeLimit: 104857600, // 100MB (reduced from 5GB)
-        allowedMimeTypes: ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-dvi', 
-                          'image/jpeg', 'image/png']
+        fileSizeLimit: 50 * 1024 * 1024, // 50MB limit (reduced from previous 100MB)
       });
       
       if (createError) {
@@ -31,7 +29,7 @@ export const ensureStorageBuckets = async () => {
     }
     
     // Set bucket policy to public (if bucket exists)
-    if (filmsExists || !filmsExists) {
+    if (filmsExists) {
       try {
         const { error: policyError } = await supabase.storage.updateBucket('films', {
           public: true

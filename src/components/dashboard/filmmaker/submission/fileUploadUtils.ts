@@ -14,12 +14,13 @@ export const handleFileSelect = (
   if (!files || files.length === 0) return;
   
   // Check file size
-  const maxSize = isMultiple ? 10 * 1024 * 1024 : 100 * 1024 * 1024; // 10MB for images, 100MB for video
+  const maxSize = isMultiple ? 10 * 1024 * 1024 : 50 * 1024 * 1024; // 10MB for images, 50MB for video
   for (let i = 0; i < files.length; i++) {
     if (files[i].size > maxSize) {
+      const sizeMB = (maxSize / (1024 * 1024)).toFixed(0);
       toast({
         title: "File Too Large",
-        description: `${files[i].name} exceeds the maximum file size (${maxSize / (1024 * 1024)}MB)`,
+        description: `${files[i].name} exceeds the maximum file size (${sizeMB}MB)`,
         variant: "destructive",
       });
       return;
@@ -53,10 +54,18 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
       const filmFileName = `${userId}/${filmId}/${Date.now()}-${filmFile.name}`;
       const { data: filmData, error: filmError } = await supabase.storage
         .from('films')
-        .upload(filmFileName, filmFile);
+        .upload(filmFileName, filmFile, {
+          cacheControl: '3600',
+          upsert: true
+        });
       
       if (filmError) {
         console.error("Film upload error:", filmError);
+        toast({
+          title: "Upload Failed",
+          description: `Failed to upload film: ${filmError.message}`,
+          variant: "destructive",
+        });
         throw filmError;
       }
       
@@ -76,11 +85,19 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
       const promoFileName = `${userId}/${filmId}/promo/${Date.now()}-${promoFile.name}`;
       const { data: promoData, error: promoError } = await supabase.storage
         .from('films')
-        .upload(promoFileName, promoFile);
+        .upload(promoFileName, promoFile, {
+          cacheControl: '3600',
+          upsert: true
+        });
       
       if (promoError) {
         console.error("Promo file upload error:", promoError);
-        throw promoError;
+        toast({
+          title: "Upload Warning",
+          description: `Failed to upload promotional file: ${promoError.message}`,
+          variant: "destructive",
+        });
+        continue; // Continue with other files even if one fails
       }
       
       console.log("Promo file uploaded successfully, getting public URL");
@@ -111,11 +128,19 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
       
       if (updateError) {
         console.error("Film record update error:", updateError);
-        throw updateError;
+        toast({
+          title: "Update Warning",
+          description: `Failed to update film record: ${updateError.message}`,
+        });
       }
     }
     
     console.log("File upload process completed successfully");
+    toast({
+      title: "Upload Successful",
+      description: filmUrl ? "Film and promotional materials uploaded" : "Promotional materials uploaded",
+    });
+    
     return { filmUrl, promoUrls };
   } catch (error: any) {
     console.error("File upload error:", error);
