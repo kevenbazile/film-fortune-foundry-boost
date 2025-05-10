@@ -43,9 +43,16 @@ const PromoUploader = ({
             multiple 
           />
           {promoFiles.length > 0 && (
-            <p className="text-sm font-medium text-primary">
-              Selected: {promoFiles.length} file(s)
-            </p>
+            <div className="text-sm font-medium text-primary">
+              <p>Selected: {promoFiles.length} file(s)</p>
+              <ul className="mt-2 text-xs max-h-20 overflow-auto">
+                {promoFiles.map((file, index) => (
+                  <li key={index}>
+                    {file.name} ({(file.size / (1024 * 1024)).toFixed(2)} MB)
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
         </div>
       </div>

@@ -18,23 +18,33 @@ export const ensureStorageBuckets = async () => {
     if (!filmsExists) {
       const { error: createError } = await supabase.storage.createBucket('films', {
         public: true,
-        fileSizeLimit: 5368709120, // 5GB
+        fileSizeLimit: 104857600, // 100MB (reduced from 5GB)
         allowedMimeTypes: ['video/mp4', 'video/quicktime', 'video/x-msvideo', 'video/x-dvi', 
                           'image/jpeg', 'image/png']
       });
       
       if (createError) {
         console.error("Error creating films bucket:", createError);
+      } else {
+        console.log("Films bucket created successfully");
       }
     }
     
-    // Set bucket policy to public
-    const { error: policyError } = await supabase.storage.updateBucket('films', {
-      public: true
-    });
-    
-    if (policyError) {
-      console.error("Error updating bucket policy:", policyError);
+    // Set bucket policy to public (if bucket exists)
+    if (filmsExists || !filmsExists) {
+      try {
+        const { error: policyError } = await supabase.storage.updateBucket('films', {
+          public: true
+        });
+        
+        if (policyError) {
+          console.error("Error updating bucket policy:", policyError);
+        } else {
+          console.log("Bucket policy updated successfully");
+        }
+      } catch (err) {
+        console.error("Error setting bucket policy:", err);
+      }
     }
     
   } catch (error) {

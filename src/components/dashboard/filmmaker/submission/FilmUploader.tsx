@@ -31,7 +31,7 @@ const FilmUploader = ({
             Drag and drop your film file here, or click to browse
           </p>
           <p className="text-xs text-muted-foreground">
-            Supports MP4, MOV, AVI, DVI (max 5GB)
+            Supports MP4, MOV, AVI, DVI (max 100MB)
           </p>
           <Input 
             ref={filmFileInputRef}
@@ -43,7 +43,7 @@ const FilmUploader = ({
           />
           {filmFile && (
             <p className="text-sm font-medium text-primary">
-              Selected: {filmFile.name}
+              Selected: {filmFile.name} ({(filmFile.size / (1024 * 1024)).toFixed(2)} MB)
             </p>
           )}
         </div>
