@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { uploadFilesToStorage } from "@/components/dashboard/filmmaker/submission/storageUtils";
 import { useNavigate } from "react-router-dom";
+import { checkAuthentication } from "@/components/dashboard/filmmaker/submission/authUtils";
 
 const FilmFormSchema = z.object({
   title: z.string().min(2, {
@@ -56,6 +57,12 @@ export const useFilmSubmission = () => {
     setIsDraftSaving(true);
     try {
       // Check if user is authenticated
+      const isAuthenticated = await checkAuthentication();
+      if (!isAuthenticated) {
+        return;
+      }
+      
+      const values = form.getValues();
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast({
@@ -66,7 +73,6 @@ export const useFilmSubmission = () => {
         return;
       }
       
-      const values = form.getValues();
       const userId = session.user.id;
       
       // Convert genres string to array for database
@@ -75,6 +81,7 @@ export const useFilmSubmission = () => {
       const mainCastArray = values.mainCast.split(',').map(actor => actor.trim());
       
       // Insert film into database as draft
+      // Use "pending" status since "draft" is not in the enum
       const { data: filmData, error: filmError } = await supabase
         .from('films')
         .insert({
@@ -86,7 +93,7 @@ export const useFilmSubmission = () => {
           main_cast: mainCastArray,
           user_id: userId,
           duration: values.duration || 1,
-          status: 'draft',
+          status: 'pending', // Changed from 'draft' to 'pending' as per the valid enum values
         })
         .select()
         .single();
@@ -122,6 +129,11 @@ export const useFilmSubmission = () => {
       setIsSubmitting(true);
       
       // Check if user is authenticated
+      const isAuthenticated = await checkAuthentication();
+      if (!isAuthenticated) {
+        return;
+      }
+      
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         toast({
