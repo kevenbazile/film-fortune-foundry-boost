@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 
 interface PromoUploaderProps {
   promoFiles: File[];
@@ -41,13 +43,35 @@ const PromoUploader = ({
     handlePromoFilesSelect({ target: { files: dataTransfer.files } } as any);
   };
 
+  const onUploadClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    
+    // Check if user is authenticated before allowing upload
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to upload files",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      handlePromoUploadClick(e);
+    };
+    
+    checkAuth();
+  };
+
   return (
     <div className="space-y-4">
       <Label>Upload Cover Art & Promotional Materials</Label>
       
       <div 
         className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center cursor-pointer hover:bg-muted/50 transition-colors"
-        onClick={handlePromoUploadClick}
+        onClick={onUploadClick}
       >
         <div className="flex flex-col items-center justify-center space-y-2">
           <Upload className="h-6 w-6 text-muted-foreground" />

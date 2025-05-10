@@ -13,39 +13,79 @@ export const handleFileSelect = (
   
   if (!files || files.length === 0) return;
   
-  // Check file size
-  const maxSize = isMultiple ? 10 * 1024 * 1024 : 50 * 1024 * 1024; // 10MB for images, 50MB for video
-  for (let i = 0; i < files.length; i++) {
-    if (files[i].size > maxSize) {
-      const sizeMB = (maxSize / (1024 * 1024)).toFixed(0);
+  // Check authentication first
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (!session) {
       toast({
-        title: "File Too Large",
-        description: `${files[i].name} exceeds the maximum file size (${sizeMB}MB)`,
+        title: "Authentication Required",
+        description: "Please log in to upload files",
         variant: "destructive",
       });
       return;
     }
-  }
-  
-  if (isMultiple) {
-    const newFiles = Array.from(files);
-    setFiles(prevFiles => [...prevFiles, ...newFiles]);
-    toast({
-      title: "Files Selected",
-      description: `Added ${files.length} file(s)`,
-    });
-  } else {
-    setFile(files[0]);
-    toast({
-      title: "File Selected",
-      description: `Selected: ${files[0].name}`,
-    });
-  }
+    
+    // Check file size
+    const maxSize = isMultiple ? 10 * 1024 * 1024 : 50 * 1024 * 1024; // 10MB for images, 50MB for video
+    for (let i = 0; i < files.length; i++) {
+      if (files[i].size > maxSize) {
+        const sizeMB = (maxSize / (1024 * 1024)).toFixed(0);
+        toast({
+          title: "File Too Large",
+          description: `${files[i].name} exceeds the maximum file size (${sizeMB}MB)`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+    
+    if (isMultiple) {
+      const newFiles = Array.from(files);
+      setFiles(prevFiles => [...prevFiles, ...newFiles]);
+      toast({
+        title: "Files Selected",
+        description: `Added ${files.length} file(s)`,
+      });
+    } else {
+      setFile(files[0]);
+      toast({
+        title: "File Selected",
+        description: `Selected: ${files[0].name}`,
+      });
+    }
+  });
 };
 
 export const uploadFilesToStorage = async (userId: string, filmId: string, filmFile: File | null, promoFiles: File[]) => {
   try {
     console.log("Starting file upload process...");
+    
+    // Check authentication first
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      throw new Error("Authentication required to upload files");
+    }
+    
+    // Check if the films bucket exists and is accessible
+    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+    
+    if (bucketsError) {
+      console.error("Error checking storage buckets:", bucketsError);
+      throw new Error("Could not access storage buckets");
+    }
+    
+    const filmsExists = buckets.some(bucket => bucket.name === 'films');
+    if (!filmsExists) {
+      console.log("Films bucket does not exist, creating...");
+      const { error: createError } = await supabase.storage.createBucket('films', {
+        public: true,
+        fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
+      });
+      
+      if (createError) {
+        console.error("Error creating films bucket:", createError);
+        throw new Error(`Failed to create storage bucket: ${createError.message}`);
+      }
+    }
     
     // Upload film file if selected
     let filmUrl = "";
@@ -56,7 +96,8 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
         .from('films')
         .upload(filmFileName, filmFile, {
           cacheControl: '3600',
-          upsert: true
+          upsert: true,
+          contentType: filmFile.type // Add content type
         });
       
       if (filmError) {
@@ -87,7 +128,8 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
         .from('films')
         .upload(promoFileName, promoFile, {
           cacheControl: '3600',
-          upsert: true
+          upsert: true,
+          contentType: promoFile.type // Add content type
         });
       
       if (promoError) {
