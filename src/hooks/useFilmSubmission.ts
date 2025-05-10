@@ -108,6 +108,16 @@ export const useFilmSubmission = () => {
         return;
       }
       
+      // Upload files if any are selected, even for drafts
+      if (filmData && (filmFile || promoFiles.length > 0)) {
+        try {
+          await uploadFilesToStorage(userId, filmData.id, filmFile, promoFiles);
+        } catch (uploadError: any) {
+          console.error("Upload error:", uploadError);
+          // Continue despite upload errors - the film record is already saved
+        }
+      }
+      
       toast({
         title: "Draft Saved",
         description: "Your film submission has been saved as a draft.",
