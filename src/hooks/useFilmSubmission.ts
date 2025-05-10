@@ -1,112 +1,136 @@
-
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { uploadFilesToStorage } from "@/components/dashboard/filmmaker/submission/fileUploadUtils";
-import { ensureStorageBuckets } from "@/integrations/supabase/storage";
+import { uploadFilesToStorage } from "@/components/dashboard/filmmaker/submission/storageUtils";
+import { useNavigate } from "react-router-dom";
 
-type FilmFormValues = {
-  title: string;
-  director: string;
-  releaseYear: number;
-  runtime: number;
-  genre: string;
-  synopsis: string;
-  additionalInfo: string;
-};
+const FilmFormSchema = z.object({
+  title: z.string().min(2, {
+    message: "Title must be at least 2 characters.",
+  }),
+  description: z.string().min(10, {
+    message: "Description must be at least 10 characters.",
+  }),
+  director: z.string().min(2, {
+    message: "Director's name must be at least 2 characters.",
+  }),
+  releaseYear: z.number().min(1888).max(new Date().getFullYear()),
+  genres: z.string().min(3, {
+    message: "Please select at least one genre.",
+  }),
+  mainCast: z.string().min(3, {
+    message: "Main cast must be at least 3 characters.",
+  }),
+  duration: z.number().min(1, {
+    message: "Duration must be at least 1 minute.",
+  }),
+});
 
 export const useFilmSubmission = () => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDraftSaving, setIsDraftSaving] = useState(false);
   const [filmFile, setFilmFile] = useState<File | null>(null);
   const [promoFiles, setPromoFiles] = useState<File[]>([]);
-  
-  const form = useForm<FilmFormValues>({
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDraftSaving, setIsDraftSaving] = useState(false);
+  const navigate = useNavigate();
+
+  const form = useForm<z.infer<typeof FilmFormSchema>>({
+    resolver: zodResolver(FilmFormSchema),
     defaultValues: {
       title: "",
+      description: "",
       director: "",
       releaseYear: new Date().getFullYear(),
-      runtime: 0,
-      genre: "",
-      synopsis: "",
-      additionalInfo: ""
-    }
+      genres: "",
+      mainCast: "",
+      duration: 1,
+    },
   });
 
-  // Ensure storage buckets exist when hook initializes
-  useEffect(() => {
-    ensureStorageBuckets().catch(err => {
-      console.error("Failed to ensure storage buckets:", err);
+  const saveDraft = async () => {
+    setIsDraftSaving(true);
+    try {
+      // Simulate saving draft
+      await new Promise((resolve) => setTimeout(resolve, 1000));
       toast({
-        title: "Storage Setup Error",
-        description: "There was an issue setting up file storage. Please try again later.",
+        title: "Draft Saved",
+        description: "Your film submission has been saved as a draft.",
+      });
+    } catch (error) {
+      toast({
+        title: "Failed to Save Draft",
+        description: "There was an error saving your draft.",
         variant: "destructive",
       });
-    });
-  }, []);
+    } finally {
+      setIsDraftSaving(false);
+    }
+  };
 
-  const onSubmit = async (formData: FilmFormValues) => {
+  const onSubmit = async (values: z.infer<typeof FilmFormSchema>) => {
     try {
       setIsSubmitting(true);
       
-      // Get current user
+      // Check if user is authenticated
       const { data: { session } } = await supabase.auth.getSession();
-      
       if (!session) {
         toast({
-          title: "Authentication required",
-          description: "Please log in to submit a film",
+          title: "Authentication Required",
+          description: "Please log in to submit your film",
           variant: "destructive",
         });
         return;
       }
       
-      // Parse genre string into an array
-      const genreArray = formData.genre.split(',').map((item: string) => item.trim());
+      const userId = session.user.id;
       
-      // First create the film entry
-      const { data, error } = await supabase
+      // Insert film into database
+      const { data: filmData, error: filmError } = await supabase
         .from('films')
         .insert({
-          user_id: session.user.id,
-          title: formData.title,
-          director: formData.director,
-          release_year: formData.releaseYear,
-          duration: formData.runtime,
-          genre: genreArray,
-          description: formData.synopsis,
-          review_notes: formData.additionalInfo,
-          status: 'pending'
+          title: values.title,
+          description: values.description,
+          director: values.director,
+          release_year: values.releaseYear,
+          genre: values.genres,
+          main_cast: values.mainCast?.split(',').map(actor => actor.trim()),
+          user_id: userId,
+          duration: values.duration,
         })
-        .select();
+        .select()
+        .single();
       
-      if (error) {
-        throw error;
+      if (filmError) {
+        console.error("Film submission error:", filmError);
+        toast({
+          title: "Submission Failed",
+          description: filmError.message,
+          variant: "destructive",
+        });
+        return;
       }
       
-      if (!data || data.length === 0) {
-        throw new Error("Failed to create film entry");
-      }
-      
-      const filmId = data[0].id;
-      
-      // Then upload files if any were selected
-      if (filmFile || promoFiles.length > 0) {
-        await uploadFilesToStorage(session.user.id, filmId, filmFile, promoFiles);
+      // Upload files to storage
+      if (filmData && (filmFile || promoFiles.length > 0)) {
+        await uploadFilesToStorage(userId, filmData.id, filmFile, promoFiles);
       }
       
       toast({
-        title: "Film Submitted Successfully",
-        description: "Your film has been submitted for review.",
+        title: "Submission Successful",
+        description: "Your film has been submitted for review",
       });
       
-      // Clear the form and selected files after successful submission
+      // Reset form and files
       form.reset();
       setFilmFile(null);
       setPromoFiles([]);
       
+      // Navigate to dashboard
+      navigate("/dashboard");
     } catch (error: any) {
+      console.error("Submission error:", error);
       toast({
         title: "Submission Failed",
         description: error.message || "An error occurred during submission",
@@ -115,20 +139,6 @@ export const useFilmSubmission = () => {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const saveDraft = () => {
-    // In a real application, this would save the current form state
-    // to localStorage or to a drafts table in the database
-    setIsDraftSaving(true);
-    
-    setTimeout(() => {
-      toast({
-        title: "Draft Saved",
-        description: "Your film details have been saved as a draft.",
-      });
-      setIsDraftSaving(false);
-    }, 1000);
   };
 
   return {
@@ -140,6 +150,6 @@ export const useFilmSubmission = () => {
     promoFiles,
     setPromoFiles,
     onSubmit,
-    saveDraft
+    saveDraft: async () => {}
   };
 };
