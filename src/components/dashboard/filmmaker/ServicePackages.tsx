@@ -11,7 +11,7 @@ interface Service {
   name: string;
   price: string | number;
   description: string;
-  features: string[];
+  features: string[] | any;
   platforms: string[];
   timeline_days: number;
   is_highlighted: boolean;
@@ -46,21 +46,37 @@ const ServicePackages = () => {
         }
         
         // Format the data to match what the ServicePackageCard component expects
-        const formattedServices: ServicePackage[] = data.map(service => ({
-          id: service.id,
-          title: service.name,
-          price: `$${service.price}`,
-          features: Array.isArray(service.features) ? service.features : 
-                  (typeof service.features === 'object' ? Object.values(service.features) : []),
-          platforms: service.platforms,
-          timeline: `${service.timeline_days} days`,
-          highlighted: service.is_highlighted,
-          description: service.description,
-          commission_rate: service.commission_rate
-        }));
+        const formattedServices: ServicePackage[] = data.map((service: Service) => {
+          // Process features array from JSON
+          let featuresArray: string[] = [];
+          
+          if (Array.isArray(service.features)) {
+            featuresArray = service.features;
+          } else if (typeof service.features === 'object') {
+            featuresArray = Object.values(service.features).map(item => String(item));
+          } else if (typeof service.features === 'string') {
+            try {
+              featuresArray = JSON.parse(service.features);
+            } catch (e) {
+              featuresArray = [String(service.features)];
+            }
+          }
+          
+          return {
+            id: service.id,
+            title: service.name,
+            price: `$${service.price}`,
+            features: featuresArray,
+            platforms: service.platforms,
+            timeline: `${service.timeline_days} days`,
+            highlighted: service.is_highlighted,
+            description: service.description,
+            commission_rate: service.commission_rate
+          };
+        });
         
         setServices(formattedServices);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error fetching services:', error);
         toast({
           title: "Error",
