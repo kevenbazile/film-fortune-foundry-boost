@@ -9,6 +9,7 @@ const Header = () => {
   const navItems = [
     { name: "Home", path: "/" },
     { name: "How It Works", path: "/how-it-works" },
+    { name: "Submit Film", path: "/submit-film" },
   ];
 
   return (
@@ -35,10 +36,15 @@ const Header = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Button variant="outline" size="sm">
-              Login
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/login">Login</Link>
             </Button>
-            <Button size="sm">Submit Film</Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link to="/signup">Sign Up</Link>
+            </Button>
+            <Button size="sm" asChild>
+              <Link to="/submit-film">Submit Film</Link>
+            </Button>
           </div>
 
           {/* Mobile Navigation */}
@@ -62,10 +68,15 @@ const Header = () => {
                     </Link>
                   ))}
                   <div className="pt-4 space-y-4">
-                    <Button variant="outline" className="w-full">
-                      Login
+                    <Button variant="outline" className="w-full" asChild>
+                      <Link to="/login">Login</Link>
                     </Button>
-                    <Button className="w-full">Submit Film</Button>
+                    <Button variant="outline" className="w-full" asChild>
+                      <Link to="/signup">Sign Up</Link>
+                    </Button>
+                    <Button className="w-full" asChild>
+                      <Link to="/submit-film">Submit Film</Link>
+                    </Button>
                   </div>
                 </nav>
               </SheetContent>
