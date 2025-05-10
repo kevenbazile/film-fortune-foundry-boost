@@ -5,7 +5,7 @@ import { toast } from "@/components/ui/use-toast";
 export const handleFileSelect = (
   e: React.ChangeEvent<HTMLInputElement>, 
   setFile: (file: File | null) => void, 
-  setFiles: (files: File[]) => void,
+  setFiles: React.Dispatch<React.SetStateAction<File[]>>,
   isMultiple: boolean = false
 ) => {
   e.preventDefault();
