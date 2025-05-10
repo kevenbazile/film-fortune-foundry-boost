@@ -25,6 +25,31 @@ export const handleSingleFileSelect = (
     return;
   }
   
+  // Check file type - let's validate the file extension
+  if (fileType === 'video') {
+    const validExtensions = ['.mp4', '.mov', '.avi', '.dvi'];
+    const extension = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!validExtensions.includes(extension)) {
+      toast({
+        title: "Invalid File Type",
+        description: `${file.name} is not a supported video format. Please use MP4, MOV, AVI, or DVI.`,
+        variant: "destructive",
+      });
+      return;
+    }
+  } else if (fileType === 'image') {
+    const validExtensions = ['.jpg', '.jpeg', '.png'];
+    const extension = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!validExtensions.includes(extension)) {
+      toast({
+        title: "Invalid File Type",
+        description: `${file.name} is not a supported image format. Please use JPG, JPEG, or PNG.`,
+        variant: "destructive",
+      });
+      return;
+    }
+  }
+  
   setFile(file);
   toast({
     title: "File Selected",
@@ -46,11 +71,22 @@ export const handleMultipleFileSelect = (
   const invalidFiles: string[] = [];
   
   for (let i = 0; i < files.length; i++) {
-    if (files[i].size > maxSize) {
-      invalidFiles.push(`${files[i].name} (exceeds ${maxSize / (1024 * 1024)}MB)`);
-    } else {
-      validFiles.push(files[i]);
+    const file = files[i];
+    // Check file size
+    if (file.size > maxSize) {
+      invalidFiles.push(`${file.name} (exceeds ${maxSize / (1024 * 1024)}MB)`);
+      continue;
     }
+    
+    // Check file type
+    const validExtensions = ['.jpg', '.jpeg', '.png'];
+    const extension = '.' + file.name.split('.').pop()?.toLowerCase();
+    if (!validExtensions.includes(extension)) {
+      invalidFiles.push(`${file.name} (invalid format)`);
+      continue;
+    }
+    
+    validFiles.push(file);
   }
   
   if (invalidFiles.length > 0) {

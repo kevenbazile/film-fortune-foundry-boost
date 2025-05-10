@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import UploadDropArea from "./UploadDropArea";
 import ImagePreviewGrid from "./ImagePreviewGrid";
 import { handleFileSelect, handleFileDrop } from "./fileSelectUtils";
+import { toast } from "@/components/ui/use-toast";
 
 interface CoverArtUploaderProps {
   promoFiles: File[];
@@ -14,13 +15,22 @@ interface CoverArtUploaderProps {
 const CoverArtUploader: React.FC<CoverArtUploaderProps> = ({ promoFiles, onFilesSelect }) => {
   const promoFileInputRef = useRef<HTMLInputElement>(null);
   
-  const handlePromoFilesSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleFileSelect(
-      e, 
-      () => {}, // No single file to set
-      (files) => onFilesSelect([...promoFiles, ...files]),
-      true
-    );
+  const handlePromoFilesSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      await handleFileSelect(
+        e, 
+        () => {}, // No single file to set
+        (files) => onFilesSelect([...promoFiles, ...files]),
+        true
+      );
+    } catch (error: any) {
+      console.error("Promo files selection error:", error);
+      toast({
+        title: "File Selection Error",
+        description: error.message || "Failed to select files",
+        variant: "destructive",
+      });
+    }
   };
   
   // Function to handle removing a specific file
@@ -30,17 +40,26 @@ const CoverArtUploader: React.FC<CoverArtUploaderProps> = ({ promoFiles, onFiles
     onFilesSelect(newPromoFiles);
   };
 
-  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      handleFileDrop(
-        e,
-        () => {}, // No single file to set
-        (files) => onFilesSelect([...promoFiles, ...files]),
-        true
-      );
+  const onDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    try {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        await handleFileDrop(
+          e,
+          () => {}, // No single file to set
+          (files) => onFilesSelect([...promoFiles, ...files]),
+          true
+        );
+      }
+    } catch (error: any) {
+      console.error("Promo files drop error:", error);
+      toast({
+        title: "File Drop Error",
+        description: error.message || "Failed to process dropped files",
+        variant: "destructive",
+      });
     }
   };
 

@@ -55,16 +55,61 @@ export const useFilmSubmission = () => {
   const saveDraft = async () => {
     setIsDraftSaving(true);
     try {
-      // Simulate saving draft
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // Check if user is authenticated
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in to save a draft",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const values = form.getValues();
+      const userId = session.user.id;
+      
+      // Convert genres string to array for database
+      const genresArray = values.genres.split(',').map(genre => genre.trim());
+      // Convert main cast to array if it's a string
+      const mainCastArray = values.mainCast.split(',').map(actor => actor.trim());
+      
+      // Insert film into database as draft
+      const { data: filmData, error: filmError } = await supabase
+        .from('films')
+        .insert({
+          title: values.title || "Draft Film",
+          description: values.description || "Draft description",
+          director: values.director || "",
+          release_year: values.releaseYear,
+          genre: genresArray,
+          main_cast: mainCastArray,
+          user_id: userId,
+          duration: values.duration || 1,
+          status: 'draft',
+        })
+        .select()
+        .single();
+      
+      if (filmError) {
+        console.error("Draft save error:", filmError);
+        toast({
+          title: "Failed to Save Draft",
+          description: filmError.message,
+          variant: "destructive",
+        });
+        return;
+      }
+      
       toast({
         title: "Draft Saved",
         description: "Your film submission has been saved as a draft.",
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Draft save error:", error);
       toast({
         title: "Failed to Save Draft",
-        description: "There was an error saving your draft.",
+        description: error.message || "There was an error saving your draft.",
         variant: "destructive",
       });
     } finally {
@@ -106,6 +151,7 @@ export const useFilmSubmission = () => {
           main_cast: mainCastArray,
           user_id: userId,
           duration: values.duration,
+          status: 'pending',
         })
         .select()
         .single();
@@ -122,7 +168,12 @@ export const useFilmSubmission = () => {
       
       // Upload files to storage
       if (filmData && (filmFile || promoFiles.length > 0)) {
-        await uploadFilesToStorage(userId, filmData.id, filmFile, promoFiles);
+        try {
+          await uploadFilesToStorage(userId, filmData.id, filmFile, promoFiles);
+        } catch (uploadError: any) {
+          console.error("Upload error:", uploadError);
+          // Continue despite upload errors - the film record is already saved
+        }
       }
       
       toast({

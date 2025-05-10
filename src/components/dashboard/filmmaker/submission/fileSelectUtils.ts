@@ -1,6 +1,7 @@
 
 import { checkAuthentication } from "./authUtils";
 import { handleSingleFileSelect, handleMultipleFileSelect } from "./fileHandlers";
+import { toast } from "@/components/ui/use-toast";
 
 // Main entry point for file selection handling
 export const handleFileSelect = async (
@@ -21,7 +22,14 @@ export const handleFileSelect = async (
   
   // Check authentication first
   const isAuthenticated = await checkAuthentication();
-  if (!isAuthenticated) return;
+  if (!isAuthenticated) {
+    toast({
+      title: "Authentication Required",
+      description: "Please log in to upload files",
+      variant: "destructive",
+    });
+    return;
+  }
   
   // Handle single or multiple file selection
   if (isMultiple) {
@@ -30,7 +38,7 @@ export const handleFileSelect = async (
     handleMultipleFileSelect(fileArray, setFiles);
   } else {
     // For single file (video)
-    handleSingleFileSelect(files[0], setFile);
+    handleSingleFileSelect(files[0], setFile, undefined, 'video');
   }
 };
 
@@ -50,7 +58,14 @@ export const handleFileDrop = async (
   
   // Check authentication first
   const isAuthenticated = await checkAuthentication();
-  if (!isAuthenticated) return;
+  if (!isAuthenticated) {
+    toast({
+      title: "Authentication Required",
+      description: "Please log in to upload files",
+      variant: "destructive",
+    });
+    return;
+  }
   
   if (isMultiple) {
     // For multiple files (images)
@@ -58,6 +73,6 @@ export const handleFileDrop = async (
     handleMultipleFileSelect(fileArray, setFiles);
   } else {
     // For single file (video)
-    handleSingleFileSelect(e.dataTransfer.files[0], setFile);
+    handleSingleFileSelect(e.dataTransfer.files[0], setFile, undefined, 'video');
   }
 };

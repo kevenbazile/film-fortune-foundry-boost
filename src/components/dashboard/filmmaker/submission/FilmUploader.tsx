@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import UploadDropArea from "./UploadDropArea";
 import { handleFileSelect, handleFileDrop } from "./fileSelectUtils";
+import { toast } from "@/components/ui/use-toast";
 
 interface FilmUploaderProps {
   filmFile: File | null;
@@ -14,13 +15,22 @@ interface FilmUploaderProps {
 const FilmUploader: React.FC<FilmUploaderProps> = ({ filmFile, onFileSelect }) => {
   const filmFileInputRef = useRef<HTMLInputElement>(null);
   
-  const handleFilmFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    handleFileSelect(
-      e, 
-      (file) => onFileSelect(file),
-      () => {}, // No array of files to set
-      false
-    );
+  const handleFilmFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    try {
+      await handleFileSelect(
+        e, 
+        (file) => onFileSelect(file),
+        () => {}, // No array of files to set
+        false
+      );
+    } catch (error: any) {
+      console.error("Film selection error:", error);
+      toast({
+        title: "File Selection Error",
+        description: error.message || "Failed to select file",
+        variant: "destructive",
+      });
+    }
   };
   
   const handleRemoveFile = (e: React.MouseEvent) => {
@@ -29,13 +39,22 @@ const FilmUploader: React.FC<FilmUploaderProps> = ({ filmFile, onFileSelect }) =
     onFileSelect(null);
   };
   
-  const onDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    handleFileDrop(
-      e,
-      (file) => onFileSelect(file),
-      () => {}, // No array of files to set
-      false
-    );
+  const onDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    try {
+      await handleFileDrop(
+        e,
+        (file) => onFileSelect(file),
+        () => {}, // No array of files to set
+        false
+      );
+    } catch (error: any) {
+      console.error("Film drop error:", error);
+      toast({
+        title: "File Drop Error",
+        description: error.message || "Failed to process dropped file",
+        variant: "destructive",
+      });
+    }
   };
   
   return (

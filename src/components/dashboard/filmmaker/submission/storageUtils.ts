@@ -3,6 +3,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 import { getContentType } from "@/integrations/supabase/storage";
 
+// Ensure the films bucket exists
+export const ensureBucketExists = async () => {
+  try {
+    // Check if bucket exists
+    const { data: buckets, error } = await supabase.storage.listBuckets();
+    
+    if (error) {
+      console.error("Error checking buckets:", error);
+      return false;
+    }
+    
+    const filmsExists = buckets.some(bucket => bucket.name === 'films');
+    if (!filmsExists) {
+      console.error("Films bucket does not exist");
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error ensuring bucket exists:", error);
+    return false;
+  }
+};
+
 export const uploadFilesToStorage = async (userId: string, filmId: string, filmFile: File | null, promoFiles: File[]) => {
   try {
     console.log("Starting file upload process...");
@@ -10,36 +34,30 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
     // Check authentication first
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to upload files",
+        variant: "destructive",
+      });
       throw new Error("Authentication required to upload files");
     }
     
-    // Check if the films bucket exists and is accessible
-    const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
-    
-    if (bucketsError) {
-      console.error("Error checking storage buckets:", bucketsError);
-      throw new Error("Could not access storage buckets");
-    }
-    
-    const filmsExists = buckets.some(bucket => bucket.name === 'films');
-    if (!filmsExists) {
-      console.log("Films bucket does not exist, creating...");
-      const { error: createError } = await supabase.storage.createBucket('films', {
-        public: true,
-        fileSizeLimit: 50 * 1024 * 1024, // 50MB limit
+    // Check if the films bucket exists
+    const bucketExists = await ensureBucketExists();
+    if (!bucketExists) {
+      toast({
+        title: "Storage Error",
+        description: "Cannot access storage. Please contact support.",
+        variant: "destructive",
       });
-      
-      if (createError) {
-        console.error("Error creating films bucket:", createError);
-        throw new Error(`Failed to create storage bucket: ${createError.message}`);
-      }
+      throw new Error("Films bucket does not exist");
     }
     
     // Upload film file if selected
     let filmUrl = "";
     if (filmFile) {
       console.log(`Uploading film file: ${filmFile.name}`);
-      const filmFileName = `${userId}/${filmId}/${Date.now()}-${filmFile.name}`;
+      const filmFileName = `${userId}/${filmId}/${Date.now()}-${filmFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
       const contentType = getContentType(filmFile.name);
       
       const { data: filmData, error: filmError } = await supabase.storage
@@ -61,7 +79,7 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
       }
       
       console.log("Film uploaded successfully, getting public URL");
-      const { data: filmUrlData } = await supabase.storage
+      const { data: filmUrlData } = supabase.storage
         .from('films')
         .getPublicUrl(filmFileName);
       
@@ -73,7 +91,7 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
     const promoUrls: string[] = [];
     for (const promoFile of promoFiles) {
       console.log(`Uploading promo file: ${promoFile.name}`);
-      const promoFileName = `${userId}/${filmId}/promo/${Date.now()}-${promoFile.name}`;
+      const promoFileName = `${userId}/${filmId}/promo/${Date.now()}-${promoFile.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
       const contentType = getContentType(promoFile.name);
       
       const { data: promoData, error: promoError } = await supabase.storage
@@ -95,7 +113,7 @@ export const uploadFilesToStorage = async (userId: string, filmId: string, filmF
       }
       
       console.log("Promo file uploaded successfully, getting public URL");
-      const { data: promoUrlData } = await supabase.storage
+      const { data: promoUrlData } = supabase.storage
         .from('films')
         .getPublicUrl(promoFileName);
       
