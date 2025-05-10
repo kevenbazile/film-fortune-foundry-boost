@@ -41,9 +41,7 @@ const Header = () => {
             <Button variant="outline" size="sm" asChild>
               <Link to="/signup">Sign Up</Link>
             </Button>
-            <Button size="sm" asChild>
-              <Link to="/submit-film">Submit Film</Link>
-            </Button>
+            
           </div>
 
           {/* Mobile Navigation */}
