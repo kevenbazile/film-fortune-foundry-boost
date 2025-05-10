@@ -90,54 +90,6 @@ export const ensureStorageBuckets = async () => {
   }
 };
 
-// Helper function to determine content type from file extension
-export const getContentType = (fileName: string): string => {
-  const extension = fileName.split('.').pop()?.toLowerCase() || '';
-  const videoTypes: Record<string, string> = {
-    'mp4': 'video/mp4',
-    'mov': 'video/quicktime',
-    'avi': 'video/x-msvideo',
-    'dvi': 'application/x-dvi'
-  };
-  
-  const imageTypes: Record<string, string> = {
-    'jpeg': 'image/jpeg',
-    'jpg': 'image/jpeg',
-    'png': 'image/png'
-  };
-  
-  return videoTypes[extension] || imageTypes[extension] || 'application/octet-stream';
-};
-
-// Upload a single file to storage
-export const uploadFileToStorage = async (
-  bucket: string,
-  path: string,
-  file: File
-): Promise<string | null> => {
-  try {
-    const contentType = getContentType(file.name);
-    
-    const { data, error } = await supabase.storage
-      .from(bucket)
-      .upload(path, file, {
-        cacheControl: '3600',
-        upsert: true,
-        contentType
-      });
-      
-    if (error) {
-      console.error(`Error uploading file ${file.name}:`, error);
-      return null;
-    }
-    
-    const { data: urlData } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(path);
-      
-    return urlData.publicUrl;
-  } catch (error) {
-    console.error("Upload error:", error);
-    return null;
-  }
-};
+// Export getContentType from bucketUtils for backward compatibility
+export { getContentType } from "@/components/dashboard/filmmaker/submission/bucketUtils";
+export { uploadFileToStorage } from "@/components/dashboard/filmmaker/submission/uploadUtils";

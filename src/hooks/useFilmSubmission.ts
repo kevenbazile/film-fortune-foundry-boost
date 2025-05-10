@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { uploadFilesToStorage } from "@/components/dashboard/filmmaker/submission/storageUtils";
+import { uploadFilesToStorage } from "@/components/dashboard/filmmaker/submission/fileUploadService";
 import { useNavigate } from "react-router-dom";
 import { checkAuthentication } from "@/components/dashboard/filmmaker/submission/authUtils";
 
