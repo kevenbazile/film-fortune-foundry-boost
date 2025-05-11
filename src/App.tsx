@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import HowItWorks from "./pages/HowItWorks";
 import FilmmakerDashboard from "./pages/FilmmakerDashboard";
 import AdminDashboard from "./pages/AdminDashboard";
+import Subscription from "./pages/Subscription";
 import Auth from "./pages/Auth";
 import AuthGuard from "./components/AuthGuard";
 import Header from "./components/Header";
@@ -39,6 +40,11 @@ const AppContent = () => {
           <Route path="/" element={<Index />} />
           <Route path="/how-it-works" element={<HowItWorks />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/subscription" element={
+            <AuthGuard>
+              <Subscription />
+            </AuthGuard>
+          } />
           <Route path="/dashboard" element={
             <AuthGuard>
               <FilmmakerDashboard />
