@@ -29,7 +29,7 @@ const SubscriptionManager = ({
     }
   }, [renderCount]);
 
-  const handleSubscriptionStatus = async (subscriptionId: string) => {
+  const handleSubscriptionSuccess = async () => {
     try {
       setIsCheckingSubscription(true);
 
@@ -54,7 +54,7 @@ const SubscriptionManager = ({
       }
     } catch (error) {
       console.error('Error checking subscription:', error);
-      if (onSubscriptionError) onSubscriptionError(error);
+      if (onSubscriptionError) onSubscriptionError(error as Error);
     } finally {
       setIsCheckingSubscription(false);
     }
@@ -85,6 +85,7 @@ const SubscriptionManager = ({
         <PayPalDirectButton
           buttonId={buttonId}
           className="w-full"
+          onSuccess={handleSubscriptionSuccess}
         />
       </div>
       

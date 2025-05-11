@@ -130,7 +130,7 @@ const RevenueAnalytics = ({ revenue, loading, userTier }: RevenueAnalyticsProps)
           </div>
         </div>
 
-        {revenue.platformRevenue && revenue.platformRevenue.length > 0 && (
+        {revenue.platformRevenue && Array.isArray(revenue.platformRevenue) && revenue.platformRevenue.length > 0 && (
           <div className="mb-8">
             <h4 className="text-md font-semibold mb-2">Revenue Chart</h4>
             <ResponsiveContainer width="100%" height={300}>

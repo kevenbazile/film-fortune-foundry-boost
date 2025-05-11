@@ -20,15 +20,26 @@ const PayPalDirectButton: React.FC<PayPalDirectButtonProps> = ({
     // Check if PayPal SDK is available
     if (window.paypal?.HostedButtons) {
       try {
-        window.paypal.HostedButtons({
-          hostedButtonId: buttonId,
-          onComplete: () => {
+        const renderOptions: { hostedButtonId: string } = {
+          hostedButtonId: buttonId
+        };
+        
+        // Create the button renderer
+        const renderer = window.paypal.HostedButtons(renderOptions);
+
+        // Add event listener to handle success separately
+        const container = document.getElementById(containerId);
+        if (container) {
+          container.addEventListener('paypal-button-complete', () => {
             console.log('PayPal transaction completed');
             if (onSuccess) {
               onSuccess();
             }
-          }
-        }).render(`#${containerId}`);
+          });
+        }
+        
+        // Render the button
+        renderer.render(`#${containerId}`);
       } catch (error) {
         console.error("Error rendering PayPal button:", error);
       }
