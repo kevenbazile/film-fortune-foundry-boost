@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { PAYPAL_CONFIG } from "@/config/paypal";
 
 // This is declared as a global interface to work with the PayPal SDK
 declare global {
@@ -21,64 +22,100 @@ interface PayPalSubscribeButtonProps {
 const PayPalSubscribeButton = ({ onSuccess, onError, planPrice }: PayPalSubscribeButtonProps) => {
   const [loading, setLoading] = useState(false);
   const [sdkReady, setSdkReady] = useState(false);
+  const [scriptError, setScriptError] = useState<Error | null>(null);
   const { toast } = useToast();
 
+  // Function to load PayPal SDK directly
+  const loadPayPalScript = () => {
+    return new Promise<void>((resolve, reject) => {
+      // Check if PayPal SDK is already loaded
+      if (window.paypal) {
+        resolve();
+        return;
+      }
+
+      console.log('Loading PayPal SDK directly...');
+      const script = document.createElement('script');
+      script.type = 'text/javascript';
+      script.src = `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CONFIG.CLIENT_ID}&currency=USD&intent=subscription`;
+      script.async = true;
+      
+      script.onload = () => {
+        console.log('PayPal SDK loaded successfully');
+        resolve();
+      };
+      
+      script.onerror = (err) => {
+        console.error('Error loading PayPal script:', err);
+        reject(new Error('Failed to load PayPal SDK'));
+      };
+      
+      document.body.appendChild(script);
+    });
+  };
+
   useEffect(() => {
-    const addPayPalScript = async () => {
-      setLoading(true);
+    const initializePayPal = async () => {
       try {
-        // Check if PayPal SDK is already loaded
-        if (window.paypal) {
-          setSdkReady(true);
-          setLoading(false);
-          return;
-        }
-
-        // Get script URL from our edge function
-        const { data, error } = await supabase.functions.invoke('get-paypal-script');
+        setLoading(true);
+        setScriptError(null);
         
-        if (error) {
-          console.error('Error fetching PayPal script URL:', error);
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not load PayPal. Please try again later.",
+        // First try loading directly
+        await loadPayPalScript();
+        setSdkReady(true);
+      } catch (directError) {
+        console.error('Direct load failed:', directError);
+        
+        // Fallback to loading via edge function
+        try {
+          // Get script URL from our edge function
+          const { data, error } = await supabase.functions.invoke('get-paypal-script');
+          
+          if (error) {
+            throw new Error(`Error fetching PayPal script URL: ${error.message}`);
+          }
+          
+          // Create script element
+          const script = document.createElement('script');
+          script.type = 'text/javascript';
+          script.src = data.scriptUrl;
+          script.async = true;
+          
+          // Promise to wait for script load
+          await new Promise<void>((resolve, reject) => {
+            script.onload = () => {
+              console.log('PayPal SDK loaded successfully via edge function');
+              resolve();
+            };
+            
+            script.onerror = (err) => {
+              console.error('Error loading PayPal script via edge function:', err);
+              reject(new Error('Failed to load PayPal SDK via edge function'));
+            };
+            
+            document.body.appendChild(script);
           });
-          setLoading(false);
-          return;
-        }
-
-        // Create script element
-        const script = document.createElement('script');
-        script.type = 'text/javascript';
-        script.src = data.scriptUrl;
-        script.async = true;
-        script.onload = () => {
-          console.log('PayPal SDK loaded successfully');
+          
           setSdkReady(true);
-          setLoading(false);
-        };
-        script.onerror = (err) => {
-          console.error('Error loading PayPal script:', err);
+        } catch (fallbackError) {
+          console.error('All PayPal SDK loading methods failed:', fallbackError);
+          setScriptError(fallbackError as Error);
           toast({
             variant: "destructive",
-            title: "Error",
-            description: "Failed to load PayPal SDK. Please try again later.",
+            title: "PayPal Error",
+            description: "Could not load PayPal. Please try again later or contact support.",
           });
-          setLoading(false);
-        };
-        document.body.appendChild(script);
-      } catch (error) {
-        console.error('Error loading PayPal SDK:', error);
+        }
+      } finally {
         setLoading(false);
       }
     };
 
-    addPayPalScript();
+    initializePayPal();
   }, [toast]);
 
   useEffect(() => {
-    if (!sdkReady) return;
+    if (!sdkReady || !window.paypal) return;
     
     const containerElement = document.getElementById('paypal-button-container');
     if (!containerElement) {
@@ -181,6 +218,24 @@ const PayPalSubscribeButton = ({ onSuccess, onError, planPrice }: PayPalSubscrib
       console.error('Error rendering PayPal buttons:', error);
     }
   }, [sdkReady, toast, onSuccess, onError, planPrice]);
+
+  // Show error message if script failed to load
+  if (scriptError) {
+    return (
+      <div className="mt-4 w-full text-center">
+        <p className="text-sm text-red-500 mb-2">
+          Unable to load payment system. Please try again later.
+        </p>
+        <Button 
+          onClick={() => window.location.reload()} 
+          variant="outline" 
+          className="w-full"
+        >
+          Refresh Page
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-4 w-full">

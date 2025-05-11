@@ -44,7 +44,7 @@ const ServicePackageCard = ({ package: pkg }: ServicePackageCardProps) => {
       <CardHeader className="text-center">
         <h3 className="text-2xl font-bold">{pkg.title}</h3>
         <div className="mt-2">
-          <span className="text-3xl font-bold">{pkg.price}</span>
+          <span className="text-3xl font-bold">${priceNumber}</span>
           <span className="text-sm font-normal text-muted-foreground">/month</span>
         </div>
       </CardHeader>

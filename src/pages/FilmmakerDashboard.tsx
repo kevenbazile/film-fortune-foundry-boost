@@ -16,11 +16,13 @@ const FilmmakerDashboard = () => {
   const [activeTab, setActiveTab] = useState("submission");
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [checkFailed, setCheckFailed] = useState(false);
 
   useEffect(() => {
     const checkSubscription = async () => {
       try {
         setLoading(true);
+        setCheckFailed(false);
         
         const { data: session } = await supabase.auth.getSession();
         if (!session.session) {
@@ -29,15 +31,19 @@ const FilmmakerDashboard = () => {
         }
         
         try {
+          console.log('Checking subscription status...');
           const { data, error } = await supabase.functions.invoke('check-subscription-status');
           
           if (error) {
             console.error('Error checking subscription:', error);
+            setCheckFailed(true);
           } else {
+            console.log('Subscription status:', data);
             setSubscriptionStatus(data.status);
           }
         } catch (error) {
           console.error('Error checking subscription status:', error);
+          setCheckFailed(true);
         }
       } finally {
         setLoading(false);
@@ -51,7 +57,7 @@ const FilmmakerDashboard = () => {
     <div className="container mx-auto py-8 px-4">
       <h1 className="text-3xl font-bold mb-8">Filmmaker Dashboard</h1>
       
-      {!loading && subscriptionStatus !== 'ACTIVE' && (
+      {!loading && !checkFailed && subscriptionStatus !== 'ACTIVE' && (
         <Alert variant="default" className="mb-6 bg-blue-50 border-blue-200">
           <AlertCircle className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-blue-700">

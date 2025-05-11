@@ -4,10 +4,10 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import ServicePackageCard from "@/components/ServicePackageCard";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import PayPalSubscribeButton from "@/components/PayPalSubscribeButton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, Info } from "lucide-react";
+import { AlertCircle, Info, Loader2 } from "lucide-react";
 
 interface Service {
   id: string;
@@ -38,10 +38,13 @@ const ServicePackages = () => {
   const [loading, setLoading] = useState(true);
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
+  const [checkingSubscription, setCheckingSubscription] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchServices = async () => {
       try {
+        setLoading(true);
         const { data, error } = await supabase
           .from('services')
           .select('*');
@@ -95,26 +98,33 @@ const ServicePackages = () => {
 
     const checkSubscription = async () => {
       try {
+        setCheckingSubscription(true);
         const { data: session } = await supabase.auth.getSession();
         if (!session.session) {
+          setCheckingSubscription(false);
           return;
         }
         
-        const { data, error } = await supabase.functions.invoke('check-subscription-status');
-        
-        if (error) {
-          console.error('Error checking subscription:', error);
-        } else {
-          setSubscriptionStatus(data.status);
+        try {
+          const { data, error } = await supabase.functions.invoke('check-subscription-status');
+          
+          if (error) {
+            console.error('Error checking subscription:', error);
+          } else {
+            console.log('Subscription status:', data);
+            setSubscriptionStatus(data.status);
+          }
+        } catch (error) {
+          console.error('Error checking subscription status:', error);
         }
-      } catch (error) {
-        console.error('Error checking subscription status:', error);
+      } finally {
+        setCheckingSubscription(false);
       }
     };
 
     fetchServices();
     checkSubscription();
-  }, []);
+  }, [toast]);
 
   const handleSelectPackage = (packageId: string) => {
     setSelectedPackage(packageId);
@@ -145,6 +155,12 @@ const ServicePackages = () => {
     });
   };
 
+  const getSelectedPackagePrice = (packageId: string | null) => {
+    if (!packageId) return '';
+    const pkg = services.find(s => s.id === packageId);
+    return pkg ? pkg.price.replace(/[^0-9.]/g, '') : '';
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center max-w-2xl mx-auto mb-8">
@@ -154,22 +170,31 @@ const ServicePackages = () => {
         </p>
       </div>
       
-      {subscriptionStatus === 'ACTIVE' && (
-        <Alert variant="default" className="mb-6 bg-green-50 border-green-200">
-          <Info className="h-4 w-4 text-green-600" />
-          <AlertDescription className="text-green-700">
-            You have an active subscription! You can select any package below with your current subscription.
-          </AlertDescription>
-        </Alert>
-      )}
-      
-      {subscriptionStatus !== 'ACTIVE' && (
-        <Alert variant="default" className="mb-6 bg-blue-50 border-blue-200">
-          <AlertCircle className="h-4 w-4 text-blue-600" />
-          <AlertDescription className="text-blue-700">
-            Subscribe to one of our packages below to access our distribution services.
-          </AlertDescription>
-        </Alert>
+      {checkingSubscription ? (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2">Checking subscription status...</span>
+        </div>
+      ) : (
+        <>
+          {subscriptionStatus === 'ACTIVE' && (
+            <Alert variant="default" className="mb-6 bg-green-50 border-green-200">
+              <Info className="h-4 w-4 text-green-600" />
+              <AlertDescription className="text-green-700">
+                You have an active subscription! You can select any package below with your current subscription.
+              </AlertDescription>
+            </Alert>
+          )}
+          
+          {subscriptionStatus !== 'ACTIVE' && (
+            <Alert variant="default" className="mb-6 bg-blue-50 border-blue-200">
+              <AlertCircle className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-700">
+                Subscribe to one of our packages below to access our distribution services.
+              </AlertDescription>
+            </Alert>
+          )}
+        </>
       )}
       
       {loading ? (
@@ -188,10 +213,11 @@ const ServicePackages = () => {
               <div className="mt-4">
                 {selectedPackage === service.id ? (
                   <div className="p-4 border rounded-lg bg-muted">
-                    <h4 className="text-sm font-medium mb-3">Complete Subscription</h4>
+                    <h4 className="text-sm font-medium mb-3">Complete Monthly Subscription</h4>
                     <PayPalSubscribeButton 
                       onSuccess={handleSubscriptionSuccess}
                       onError={handleSubscriptionError}
+                      planPrice={getSelectedPackagePrice(selectedPackage)}
                     />
                     <Button 
                       variant="outline" 
