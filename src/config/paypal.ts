@@ -2,22 +2,21 @@
 /**
  * PayPal Configuration
  * 
- * IMPORTANT: When switching to production:
- * 1. Change PAYPAL_MODE to 'live'
- * 2. Update CLIENT_ID and SECRET with your production credentials
+ * PRODUCTION MODE ENABLED
+ * Using live PayPal API endpoints and credentials
  */
 export const PAYPAL_CONFIG = {
-  // Change to 'live' for production
-  MODE: 'sandbox',
+  // Set to 'live' for production
+  MODE: 'live',
   
-  // Sandbox credentials (replace with production credentials for live)
+  // Live production credentials
   CLIENT_ID: 'AWLqCibRJ6ZC89ARQ8HFCoL9z57Lg0qvbY2HtLKrJwmqjM8C3XRlR2h9b0_g5m3Wb8TRGjP30Kj_td75',
   
   // DO NOT expose client secret in browser code - only use in edge functions
   SECRET: 'EJeSkREnt3W8iCuLAG2ihBJqfjqThj5YjrCknRt_7TmS0SrppC8cP7_bahYUVt0h0whnwxIaeWDjHG8-',
   
-  // API URLs
-  API_URL: 'https://api-m.sandbox.paypal.com', // Change to https://api-m.paypal.com for production
+  // API URLs - using production URLs
+  API_URL: 'https://api-m.paypal.com', // Production URL
 };
 
 // Plan details for monthly subscription

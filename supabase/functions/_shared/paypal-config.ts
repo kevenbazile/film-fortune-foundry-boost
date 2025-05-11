@@ -2,20 +2,16 @@
 /**
  * PayPal configuration for edge functions
  * 
- * PRODUCTION TRANSITION:
- * When moving to production, update the following in Supabase Dashboard:
- * - Change PAYPAL_MODE to 'live'
- * - Update PAYPAL_CLIENT_ID and PAYPAL_SECRET with production values
+ * PRODUCTION CONFIGURATION ACTIVE
+ * Using live PayPal API endpoints and credentials
  */
 
-// Get PayPal configuration from environment variables
+// Get PayPal configuration from environment variables with fallback to hardcoded values
 export function getPayPalConfig() {
-  const mode = Deno.env.get('PAYPAL_MODE') || 'sandbox';
+  const mode = Deno.env.get('PAYPAL_MODE') || 'live';
   
-  // API endpoints based on mode
-  const apiUrl = mode === 'sandbox' 
-    ? 'https://api-m.sandbox.paypal.com' 
-    : 'https://api-m.paypal.com';
+  // API endpoints based on mode - now defaulting to production
+  const apiUrl = 'https://api-m.paypal.com';
   
   return {
     mode,

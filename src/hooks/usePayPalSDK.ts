@@ -7,6 +7,7 @@ export const usePayPalSDK = () => {
   const [loading, setLoading] = useState(false);
   const [sdkReady, setSdkReady] = useState(false);
   const [scriptError, setScriptError] = useState<Error | null>(null);
+  const [paypalMode, setPaypalMode] = useState<string>('live'); // Default to live mode
 
   useEffect(() => {
     const initializePayPal = async () => {
@@ -24,7 +25,7 @@ export const usePayPalSDK = () => {
 
         // First try loading directly
         try {
-          console.log('Loading PayPal SDK directly...');
+          console.log('Loading PayPal SDK directly in LIVE mode...');
           await loadPayPalScript();
           console.log('PayPal SDK loaded successfully via direct method');
           setSdkReady(true);
@@ -39,6 +40,12 @@ export const usePayPalSDK = () => {
             
             if (error) {
               throw new Error(`Error fetching PayPal script URL: ${error.message}`);
+            }
+            
+            // Update mode if returned from edge function
+            if (data.mode) {
+              setPaypalMode(data.mode);
+              console.log(`PayPal mode set to: ${data.mode}`);
             }
             
             // Create script element
@@ -95,7 +102,7 @@ export const usePayPalSDK = () => {
       script.async = true;
       
       script.onload = () => {
-        console.log('PayPal SDK loaded successfully via direct method');
+        console.log('PayPal SDK loaded successfully via direct method (LIVE mode)');
         resolve();
       };
       
@@ -108,5 +115,5 @@ export const usePayPalSDK = () => {
     });
   };
 
-  return { loading, sdkReady, scriptError };
+  return { loading, sdkReady, scriptError, paypalMode };
 };

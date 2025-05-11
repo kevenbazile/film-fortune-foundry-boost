@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePayPalSDK } from "@/hooks/usePayPalSDK";
 import PayPalButtonRenderer from "@/components/PayPalButtonRenderer";
@@ -20,7 +20,7 @@ interface PayPalSubscribeButtonProps {
 }
 
 const PayPalSubscribeButton = ({ onSuccess, onError, planPrice }: PayPalSubscribeButtonProps) => {
-  const { loading, sdkReady, scriptError } = usePayPalSDK();
+  const { loading, sdkReady, scriptError, paypalMode } = usePayPalSDK();
   const { toast } = useToast();
 
   // Show error message if script failed to load
@@ -35,6 +35,7 @@ const PayPalSubscribeButton = ({ onSuccess, onError, planPrice }: PayPalSubscrib
           variant="outline" 
           className="w-full"
         >
+          <RefreshCw className="mr-2 h-4 w-4" />
           Refresh Page
         </Button>
       </div>
@@ -46,15 +47,22 @@ const PayPalSubscribeButton = ({ onSuccess, onError, planPrice }: PayPalSubscrib
       {loading ? (
         <Button disabled className="w-full">
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Loading PayPal...
+          Loading PayPal... ({paypalMode === 'live' ? 'Production' : 'Sandbox'})
         </Button>
       ) : (
-        <PayPalButtonRenderer 
-          sdkReady={sdkReady} 
-          onSuccess={onSuccess} 
-          onError={onError} 
-          planPrice={planPrice} 
-        />
+        <>
+          {sdkReady && (
+            <div className="text-xs text-right mb-1 text-muted-foreground">
+              {paypalMode === 'live' ? 'Live PayPal' : 'Sandbox Mode'}
+            </div>
+          )}
+          <PayPalButtonRenderer 
+            sdkReady={sdkReady} 
+            onSuccess={onSuccess} 
+            onError={onError} 
+            planPrice={planPrice} 
+          />
+        </>
       )}
     </div>
   );

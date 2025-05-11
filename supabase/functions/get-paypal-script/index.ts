@@ -11,11 +11,15 @@ serve(async (req) => {
 
   try {
     const config = getPayPalConfig();
+    // Using production PayPal SDK URL
     const scriptUrl = `https://www.paypal.com/sdk/js?client-id=${config.clientId}&currency=USD&intent=subscription`;
+    
+    console.log('Providing PayPal script URL for mode:', config.mode);
     
     return new Response(
       JSON.stringify({
-        scriptUrl
+        scriptUrl,
+        mode: config.mode
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
