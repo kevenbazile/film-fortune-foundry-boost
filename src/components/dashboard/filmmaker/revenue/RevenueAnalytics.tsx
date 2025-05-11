@@ -1,259 +1,125 @@
-
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ArrowUpRight, Info } from "lucide-react";
-import { 
-  ChartContainer, 
-  ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent
-} from "@/components/ui/chart";
-import { 
-  BarChart,
-  Bar,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-  Legend
-} from "recharts";
-import { formatDistanceToNow } from "date-fns";
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line } from "recharts";
+import { ArrowUpRight, ArrowDownRight, DollarSign, TrendingUp, Calendar, Loader2 } from "lucide-react";
 
 interface RevenueAnalyticsProps {
   revenue: any;
   loading: boolean;
-  userTier: 'basic' | 'premium' | 'elite' | null;
+  userTier: string | null;
 }
 
 const RevenueAnalytics = ({ revenue, loading, userTier }: RevenueAnalyticsProps) => {
-  // Define platforms based on subscription tier
-  const platformsByTier = {
-    basic: ['YouTube', 'Vimeo', 'Dailymotion'],
-    premium: ['YouTube', 'Vimeo', 'Amazon Prime', 'Tubi', 'Pluto TV'],
-    elite: ['YouTube', 'Vimeo', 'Amazon Prime', 'Netflix', 'Hulu', 'Apple TV+', 'HBO Max']
-  };
-
-  // Define colors for chart
-  const chartColors = {
-    YouTube: "#FF0000",
-    Vimeo: "#1AB7EA",
-    Dailymotion: "#0066DC",
-    "Amazon Prime": "#00A8E1",
-    Tubi: "#FF501A",
-    "Pluto TV": "#FFFF00",
-    Netflix: "#E50914",
-    Hulu: "#3DBB3D",
-    "Apple TV+": "#000000",
-    "HBO Max": "#741B47"
-  };
-
   const chartConfig = {
     platforms: {
-      theme: {
-        light: "hsl(var(--chart-1))"
-      }
+      label: "Platform Revenue",
+      color: "#4f46e5", // Use direct color instead of theme
     },
     growth: {
-      theme: {
-        light: "hsl(var(--chart-2))"
-      }
+      label: "Revenue Growth",
+      color: "#10b981", // Use direct color instead of theme
     }
+  };
+
+  const calculateTotalRevenue = (data: any) => {
+    if (!data || data.length === 0) return 0;
+    return data.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+  };
+
+  const calculateRevenueGrowth = (data: any) => {
+    if (!data || data.length < 2) return 0;
+    const currentRevenue = data[data.length - 1].amount || 0;
+    const previousRevenue = data[data.length - 2].amount || 0;
+    if (previousRevenue === 0) return currentRevenue > 0 ? 100 : 0;
+    return ((currentRevenue - previousRevenue) / previousRevenue) * 100;
+  };
+
+  const totalRevenue = calculateTotalRevenue(revenue);
+  const revenueGrowth = calculateRevenueGrowth(revenue);
+
+  const renderTooltipContent = (entry: any) => {
+    if (entry && entry.payload && entry.payload.length > 0) {
+      const data = entry.payload[0].payload;
+      return (
+        <div className="p-2 bg-white border rounded-md shadow-md">
+          <p className="text-sm font-medium text-gray-800">{data.date}</p>
+          {Object.keys(chartConfig).map((key) => (
+            <p key={key} className="text-xs text-gray-600">
+              <span style={{ color: chartConfig[key as keyof typeof chartConfig].color }}>
+                ●
+              </span>{" "}
+              {chartConfig[key as keyof typeof chartConfig].label}: {data[key]}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
   };
 
   if (loading) {
     return (
-      <Card className="col-span-4">
-        <CardHeader className="pb-2">
+      <Card className="w-full">
+        <CardHeader>
           <CardTitle>Revenue Analytics</CardTitle>
-          <CardDescription>Loading revenue data...</CardDescription>
+          <CardDescription>Analyzing your revenue data...</CardDescription>
         </CardHeader>
-        <CardContent className="h-80 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </CardContent>
       </Card>
     );
   }
-
-  if (!userTier) {
-    return (
-      <Card className="col-span-4 text-center">
-        <CardHeader className="pb-2">
-          <CardTitle>Revenue Analytics</CardTitle>
-          <CardDescription>Subscribe to a distribution plan to view revenue analytics</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center py-8">
-          <Button 
-            onClick={() => window.location.href = '/dashboard?tab=packages'}
-            variant="default"
-            className="mt-4"
-          >
-            View Distribution Plans
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!revenue || revenue.totalRevenue === 0) {
-    return (
-      <Card className="col-span-4">
-        <CardHeader className="pb-2">
-          <CardTitle>Revenue Analytics</CardTitle>
-          <CardDescription>Track your film's revenue across platforms</CardDescription>
-        </CardHeader>
-        <CardContent className="h-80 flex flex-col items-center justify-center">
-          <Info className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="text-lg font-semibold">Not enough data to show analytics</h3>
-          <p className="text-center text-muted-foreground max-w-md mt-2">
-            We'll display your revenue analytics here once your film begins generating revenue on distribution platforms.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  // Sample data for demonstration - in a real app this would come from the revenue prop
-  const samplePlatformData = platformsByTier[userTier].map(platform => ({
-    name: platform,
-    revenue: Math.floor(Math.random() * 5000)
-  }));
-
-  const sampleTimelineData = Array.from({ length: 12 }, (_, i) => ({
-    month: `Month ${i+1}`,
-    revenue: Math.floor(Math.random() * 10000)
-  }));
 
   return (
-    <div className="space-y-6">
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-baseline justify-between">
-              <div className="text-2xl font-bold">${revenue.totalRevenue || 5280}</div>
-              <div className="text-sm text-muted-foreground">
-                <span className="text-emerald-500 flex items-center">
-                  +12.5% <ArrowUpRight className="ml-1 h-4 w-4" />
-                </span>
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle>Revenue Analytics</CardTitle>
+        <CardDescription>Overview of your film's revenue performance.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="flex items-center justify-between p-4 bg-muted rounded-md">
+            <div>
+              <span className="text-sm font-medium text-muted-foreground">Total Revenue</span>
+              <div className="text-2xl font-bold mt-2">
+                <DollarSign className="mr-2 h-4 w-4 inline-block" />
+                {totalRevenue.toFixed(2)}
               </div>
             </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Growth Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{revenue.growthRate || 16.7}%</div>
-            <p className="text-xs text-muted-foreground">
-              Last 30 days
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium">Release Time</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{revenue.daysSinceRelease || 78} days</div>
-            <p className="text-xs text-muted-foreground">
-              Since release
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-      
-      {/* Platform Revenue Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Revenue by Platform</CardTitle>
-          <CardDescription>
-            Distribution across {platformsByTier[userTier].length} platforms
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <ChartContainer
-              config={chartConfig}
-            >
-              <BarChart
-                data={revenue.platformRevenue || samplePlatformData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <ChartTooltip 
-                  content={
-                    <ChartTooltipContent />
-                  }
-                />
-                <Bar dataKey="revenue">
-                  {(revenue.platformRevenue || samplePlatformData).map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={chartColors[entry.name] || `hsl(${index * 45}, 70%, 50%)`} />
-                  ))}
-                </Bar>
-                <ChartLegend
-                  content={
-                    <ChartLegendContent />
-                  }
-                />
-              </BarChart>
-            </ChartContainer>
+            <ArrowUpRight className="h-6 w-6 text-green-500" />
           </div>
-        </CardContent>
-      </Card>
-      
-      {/* Growth Timeline Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Revenue Growth Over Time</CardTitle>
-          <CardDescription>
-            Monthly revenue since release
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-80">
-            <ChartContainer
-              config={chartConfig}
-            >
-              <LineChart
-                data={revenue.growthTimeline || sampleTimelineData}
-                margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <ChartTooltip
-                  content={
-                    <ChartTooltipContent />
-                  }
-                />
-                <Line
-                  type="monotone"
-                  dataKey="revenue"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ChartContainer>
+          <div className="flex items-center justify-between p-4 bg-muted rounded-md">
+            <div>
+              <span className="text-sm font-medium text-muted-foreground">Revenue Growth</span>
+              <div className="text-2xl font-bold mt-2">
+                <TrendingUp className="mr-2 h-4 w-4 inline-block" />
+                {revenueGrowth.toFixed(2)}%
+              </div>
+            </div>
+            {revenueGrowth >= 0 ? (
+              <ArrowUpRight className="h-6 w-6 text-green-500" />
+            ) : (
+              <ArrowDownRight className="h-6 w-6 text-red-500" />
+            )}
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+
+        <div className="mb-8">
+          <h4 className="text-md font-semibold mb-2">Revenue Chart</h4>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={revenue} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis />
+              <Tooltip content={renderTooltipContent} />
+              <Legend />
+              <Bar dataKey="amount" fill={chartConfig.platforms.color} name={chartConfig.platforms.label} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

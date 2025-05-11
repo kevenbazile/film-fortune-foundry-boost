@@ -52,5 +52,15 @@ export const PAYPAL_CONFIG = {
       price: "75",
       buttonId: "Q8ANQHXU3MH82"
     }
-  }
+  },
+  MODE: "live" // Default to live mode
+};
+
+// Exported aliases for backward compatibility
+export const SUBSCRIPTION_PLANS = PAYPAL_CONFIG.PACKAGES;
+export const ALACARTE_SERVICES = PAYPAL_CONFIG.ALACARTE_SERVICES;
+
+// Function to get the PayPal script URL
+export const getPayPalScriptUrl = () => {
+  return "https://www.paypal.com/sdk/js?components=hosted-buttons&client-id=sb";
 };

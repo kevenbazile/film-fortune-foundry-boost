@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import PayPalDirectButton from './PayPalDirectButton';
+import PayPalDirectButton from './paypal-direct/PayPalDirectButton';
 import { PAYPAL_CONFIG } from '@/config/paypal';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './ui/use-toast';
