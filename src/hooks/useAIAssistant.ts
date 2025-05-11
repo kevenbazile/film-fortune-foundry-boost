@@ -1,12 +1,12 @@
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { getUserData } from '@/components/dashboard/filmmaker/revenue/services/userDataService';
 import { fetchUserApplications } from '@/components/dashboard/filmmaker/investment/services/investmentService';
 
-export type MessageRole = 'user' | 'assistant' | 'system' | 'suggestions' | 'transfer';
+export type MessageRole = 'user' | 'assistant' | 'system' | 'suggestions' | 'transfer' | 'agent';
 
 export type Message = {
   role: MessageRole;
@@ -22,6 +22,8 @@ export function useAIAssistant() {
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAgentChat, setIsAgentChat] = useState(false);
+  const [currentRoomId, setCurrentRoomId] = useState<string | null>(null);
   const { user } = useAuth();
 
   // Film distribution responses database
@@ -189,8 +191,90 @@ export function useAIAssistant() {
       'What platforms do you support?'
     ];
   };
+
+  // Setup real-time subscription to chat rooms and messages
+  useEffect(() => {
+    if (!user?.id || !isAgentChat || !currentRoomId) return;
+
+    // Subscribe to messages in the current room
+    const messagesChannel = supabase
+      .channel(`messages-${currentRoomId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `room_id=eq.${currentRoomId}`
+        },
+        async (payload) => {
+          const newMessage = payload.new;
+          
+          // Skip own messages (already added to state)
+          if (newMessage.sender_id === user.id) return;
+          
+          // Add agent message to chat
+          setMessages(prev => [...prev, {
+            role: 'agent',
+            content: newMessage.content
+          }]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(messagesChannel);
+    };
+  }, [isAgentChat, currentRoomId, user?.id]);
+
+  // Create or find a chat room for the user and staff
+  const createOrFindChatRoom = async (): Promise<string | null> => {
+    if (!user?.id) return null;
+
+    try {
+      // Check for existing active room
+      const { data: existingRooms } = await supabase
+        .from('chat_rooms')
+        .select('*')
+        .eq('filmmaker_id', user.id)
+        .eq('status', 'active')
+        .limit(1);
+
+      if (existingRooms && existingRooms.length > 0) {
+        return existingRooms[0].id;
+      }
+
+      // Create a new room
+      const { data: newRoom, error } = await supabase
+        .from('chat_rooms')
+        .insert({
+          filmmaker_id: user.id,
+          room_name: `Support for ${user.id}`,
+          status: 'active'
+        })
+        .select('*')
+        .single();
+
+      if (error) {
+        console.error("Error creating chat room:", error);
+        return null;
+      }
+
+      // Create system message in the new room
+      await supabase.from('chat_messages').insert({
+        room_id: newRoom.id,
+        content: "Support request initiated from AI Assistant. A staff member will join shortly.",
+        message_type: 'system'
+      });
+
+      return newRoom.id;
+    } catch (error) {
+      console.error("Error managing chat room:", error);
+      return null;
+    }
+  };
   
-  // Send message to AI assistant
+  // Send message to AI assistant or human agent
   const sendMessage = async (input: string) => {
     if (!input.trim() || isLoading) return;
     
@@ -200,7 +284,24 @@ export function useAIAssistant() {
     setIsLoading(true);
     
     try {
-      // Generate response using the fallback mechanism
+      // Handle agent chat mode
+      if (isAgentChat) {
+        if (!currentRoomId || !user?.id) {
+          throw new Error("Chat room not initialized");
+        }
+        
+        // Insert message into database
+        await supabase.from('chat_messages').insert({
+          room_id: currentRoomId,
+          content: input,
+          sender_id: user.id
+        });
+        
+        setIsLoading(false);
+        return;
+      }
+      
+      // AI mode - Generate response using the fallback mechanism
       const responseKey = await generateResponse(input);
       let response: string;
       let isTransfer = false;
@@ -223,9 +324,10 @@ export function useAIAssistant() {
       };
       setMessages(prev => [...prev, assistantMessage as Message]);
       
-      // Create notification for transfer requests
+      // Handle transfer to human agent
       if (isTransfer && user?.id) {
         try {
+          // Create notification for staff
           await supabase.from('notifications').insert({
             user_id: user.id,
             title: 'Support Request from AI Chat',
@@ -237,13 +339,30 @@ export function useAIAssistant() {
             title: "Support Request Sent",
             description: "Our team has been notified and will contact you soon.",
           });
+          
+          // Create or find chat room
+          const roomId = await createOrFindChatRoom();
+          
+          if (roomId) {
+            setCurrentRoomId(roomId);
+            setIsAgentChat(true);
+            
+            // Add system message about the transition
+            setMessages(prev => [
+              ...prev, 
+              { 
+                role: 'system', 
+                content: 'You have been connected to our support team. Please wait for an agent to respond.' 
+              }
+            ]);
+          }
         } catch (error) {
-          console.error("Error creating notification:", error);
+          console.error("Error transitioning to agent chat:", error);
         }
       }
       
       // Generate and add suggestions if not transferring
-      if (!isTransfer) {
+      if (!isTransfer && !isAgentChat) {
         const suggestions = generateSuggestions(input);
         if (suggestions.length > 0) {
           setMessages(prev => [
@@ -277,11 +396,62 @@ export function useAIAssistant() {
     }
   };
   
+  // Setup a realtime listener for chat rooms status changes
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const roomsChannel = supabase
+      .channel('rooms-status-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chat_rooms',
+          filter: `filmmaker_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Chat room updated:', payload);
+          
+          // If a staff member was assigned or status changed
+          if (payload.new.staff_id && !payload.old.staff_id) {
+            setMessages(prev => [
+              ...prev,
+              { 
+                role: 'system', 
+                content: 'A support agent has joined the chat.' 
+              }
+            ]);
+          }
+          
+          // If room was closed
+          if (payload.new.status === 'closed' && payload.old.status === 'active') {
+            setMessages(prev => [
+              ...prev,
+              { 
+                role: 'system', 
+                content: 'This support conversation has been closed. You can start a new AI chat or request support again if needed.' 
+              }
+            ]);
+            setIsAgentChat(false);
+            setCurrentRoomId(null);
+          }
+        }
+      )
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(roomsChannel);
+    };
+  }, [user?.id]);
+  
   return {
     messages,
     isLoading,
     isInitialized: true, // Always return true as we're using the fallback mechanism
     initializeModel: () => {}, // No-op function
     sendMessage,
+    isAgentChat,
+    currentRoomId
   };
 }

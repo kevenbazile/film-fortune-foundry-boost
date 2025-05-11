@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +19,8 @@ import { ensureStorageBuckets } from "./integrations/supabase/storage";
 import PayPalSuccessHandler from "./components/PayPalSuccessHandler";
 import { AIChatBot } from "./components/dashboard/filmmaker/AIChatBot";
 import { useAuth } from "./context/AuthContext";
+import { supabase } from "./integrations/supabase/client";
+import { toast } from "./components/ui/use-toast";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +38,58 @@ const AppContent = () => {
 
   // Get actual userId from auth context
   const { user } = useAuth();
+
+  // Setup real-time notification for new support agent messages
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const chatNotificationsChannel = supabase
+      .channel('chat-notifications')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `sender_id=neq.${user.id}`
+        },
+        async (payload) => {
+          const message = payload.new;
+          
+          // Check if this message is in a room for this user
+          const { data: room } = await supabase
+            .from('chat_rooms')
+            .select('*')
+            .eq('id', message.room_id)
+            .eq('filmmaker_id', user.id)
+            .single();
+            
+          if (room && message.sender_id) {
+            // Get sender info if available
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('first_name, last_name')
+              .eq('id', message.sender_id)
+              .single();
+              
+            const senderName = profile 
+              ? `${profile.first_name || ''} ${profile.last_name || ''}`
+              : 'Support agent';
+              
+            // Show notification
+            toast({
+              title: `New message from ${senderName}`,
+              description: message.content.substring(0, 60) + (message.content.length > 60 ? '...' : ''),
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(chatNotificationsChannel);
+    };
+  }, [user?.id]);
 
   return (
     <div className="flex flex-col min-h-screen">

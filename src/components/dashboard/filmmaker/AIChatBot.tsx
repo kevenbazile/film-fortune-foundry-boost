@@ -5,6 +5,8 @@ import { Bot, Minimize2, Send, Loader2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 interface AIChatBotProps {
   userId: string;
@@ -15,13 +17,16 @@ export const AIChatBot = ({ userId, isMinimized: initialMinimized = true }: AICh
   const [isMinimized, setIsMinimized] = useState(initialMinimized);
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
   
   const {
     messages,
     isLoading,
     isInitialized,
     initializeModel,
-    sendMessage
+    sendMessage,
+    isAgentChat,
+    currentRoomId
   } = useAIAssistant();
 
   // Initialize model when chat is opened
@@ -35,6 +40,33 @@ export const AIChatBot = ({ userId, isMinimized: initialMinimized = true }: AICh
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Real-time subscription to chat messages when in agent chat mode
+  useEffect(() => {
+    if (!isAgentChat || !currentRoomId) return;
+
+    // Subscribe to new messages in the current chat room
+    const channel = supabase
+      .channel(`room-${currentRoomId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `room_id=eq.${currentRoomId}`
+        },
+        (payload) => {
+          console.log('New chat message received:', payload);
+          // The messages will be updated through the hook
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [isAgentChat, currentRoomId]);
 
   const handleSendMessage = () => {
     if (input.trim()) {
@@ -60,8 +92,17 @@ export const AIChatBot = ({ userId, isMinimized: initialMinimized = true }: AICh
       {/* Header */}
       <div className="flex items-center justify-between p-4 bg-primary text-primary-foreground">
         <div className="flex items-center gap-2">
-          <Bot className="h-5 w-5" />
-          <span className="font-medium">AI Assistant</span>
+          {isAgentChat ? (
+            <>
+              <Users className="h-5 w-5" />
+              <span className="font-medium">Support Agent</span>
+            </>
+          ) : (
+            <>
+              <Bot className="h-5 w-5" />
+              <span className="font-medium">AI Assistant</span>
+            </>
+          )}
         </div>
         <Button
           onClick={() => setIsMinimized(true)}
@@ -160,7 +201,7 @@ export const AIChatBot = ({ userId, isMinimized: initialMinimized = true }: AICh
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-            placeholder="Ask me anything..."
+            placeholder={isAgentChat ? "Message support agent..." : "Ask me anything..."}
             disabled={isLoading}
             className="flex-1 px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
@@ -172,6 +213,11 @@ export const AIChatBot = ({ userId, isMinimized: initialMinimized = true }: AICh
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </div>
+        {isAgentChat && (
+          <p className="text-xs text-muted-foreground mt-2">
+            You're now chatting with a support agent. Response times may vary.
+          </p>
+        )}
       </div>
     </div>
   );
