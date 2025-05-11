@@ -7,6 +7,7 @@ import RevenueTracking from "@/components/dashboard/filmmaker/RevenueTracking";
 import PaymentStatus from "@/components/dashboard/filmmaker/PaymentStatus";
 import CommissionBreakdown from "@/components/dashboard/filmmaker/CommissionBreakdown";
 import DistributionTracker from "@/components/dashboard/filmmaker/DistributionTracker";
+import InvestmentCenter from "@/components/dashboard/filmmaker/InvestmentCenter";
 import { AlertCircle } from "lucide-react";
 import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 const FilmmakerDashboard = () => {
   const [searchParams] = useSearchParams();
   const tabFromUrl = searchParams.get('tab');
-  const validTabs = ['submission', 'packages', 'revenue', 'payment', 'commission', 'distribution'];
+  const validTabs = ['submission', 'packages', 'revenue', 'payment', 'commission', 'distribution', 'investment'];
   const initialTab = validTabs.includes(tabFromUrl || '') ? tabFromUrl : 'submission';
   
   const [activeTab, setActiveTab] = useState(initialTab);
@@ -85,13 +86,14 @@ const FilmmakerDashboard = () => {
       )}
       
       <Tabs defaultValue="submission" value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+        <TabsList className="w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2">
           <TabsTrigger value="submission">Project Submission</TabsTrigger>
           <TabsTrigger value="packages">Service Packages</TabsTrigger>
           <TabsTrigger value="revenue">Revenue Tracking</TabsTrigger>
           <TabsTrigger value="payment">Payment Status</TabsTrigger>
           <TabsTrigger value="commission">Commission</TabsTrigger>
           <TabsTrigger value="distribution">Distribution</TabsTrigger>
+          <TabsTrigger value="investment">Investment</TabsTrigger>
         </TabsList>
         
         <TabsContent value="submission" className="mt-6">
@@ -116,6 +118,10 @@ const FilmmakerDashboard = () => {
         
         <TabsContent value="distribution" className="mt-6">
           <DistributionTracker />
+        </TabsContent>
+        
+        <TabsContent value="investment" className="mt-6">
+          <InvestmentCenter />
         </TabsContent>
       </Tabs>
     </div>
