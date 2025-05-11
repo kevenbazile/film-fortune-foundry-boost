@@ -28,13 +28,13 @@ export const SUBSCRIPTION_PLANS = {
   },
   PREMIUM: {
     name: "Premium Distribution",
-    buttonId: "93PKADEJPRP5U", 
+    buttonId: "93PKADEJPRP5U", // Correct Premium button ID
     price: "500",
     currency: "USD",
   },
   ELITE: {
     name: "Elite Distribution",
-    buttonId: "Y9NLPW24N8TUS",
+    buttonId: "Y9NLPW24N8TUS", // Correct Elite button ID
     price: "1000",
     currency: "USD",
   }

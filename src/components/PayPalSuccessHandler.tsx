@@ -17,6 +17,13 @@ const PayPalSuccessHandler: React.FC = () => {
     
     const handleSuccess = async () => {
       try {
+        // Get plan name for better messaging
+        let planName = '';
+        if (planType === 'BASIC') planName = 'Basic Distribution';
+        else if (planType === 'PREMIUM') planName = 'Premium Distribution';
+        else if (planType === 'ELITE') planName = 'Elite Distribution';
+        else planName = 'Distribution';
+        
         // Record subscription success in database via function
         await supabase.functions.invoke('record-subscription-success', {
           body: { 
@@ -27,7 +34,7 @@ const PayPalSuccessHandler: React.FC = () => {
         
         toast({
           title: "Subscription Successful!",
-          description: `Your ${planType || ''} subscription has been activated. Thank you for subscribing!`,
+          description: `Your ${planName} subscription has been activated. Thank you for subscribing!`,
         });
         
         // Navigate to dashboard packages tab after success
