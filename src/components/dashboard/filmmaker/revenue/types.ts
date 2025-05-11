@@ -10,6 +10,7 @@ export interface Earning {
     type: 'platform' | 'direct';
   };
   notes?: string;
+  location?: string;
 }
 
 export interface RevenueData {
@@ -24,4 +25,18 @@ export interface UserFilmData {
   userId: string | null;
   filmId: string | null;
   userTier: 'basic' | 'premium' | 'elite' | null;
+}
+
+export interface PaymentStatus {
+  id: string;
+  filmTitle: string;
+  platform: string;
+  location: string;
+  amount: number;
+  paymentDate: string;
+  status: 'pending' | 'paid' | 'processing';
+  paymentMethod?: string;
+  transactionId?: string;
+  views?: number;
+  notes?: string;
 }
