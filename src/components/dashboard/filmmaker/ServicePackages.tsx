@@ -14,8 +14,7 @@ const ServicePackages = () => {
     checkingSubscription,
     handleSelectPackage,
     handleSubscriptionSuccess,
-    handleSubscriptionError,
-    handleCustomPackageRequest
+    handleSubscriptionError
   } = useServicePackages();
 
   return (
@@ -42,7 +41,7 @@ const ServicePackages = () => {
         onSubscriptionError={handleSubscriptionError}
       />
       
-      <CustomPackageRequest onCustomPackageRequest={handleCustomPackageRequest} />
+      <CustomPackageRequest />
     </div>
   );
 };

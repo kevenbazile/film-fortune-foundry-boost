@@ -5,19 +5,15 @@ import { Button } from "@/components/ui/button";
 import AlaCarteServiceItem from "./AlaCarteServiceItem";
 import { ALACARTE_SERVICES } from "@/config/paypal";
 
-interface CustomPackageRequestProps {
-  onCustomPackageRequest: () => void;
-}
-
-const CustomPackageRequest = ({ onCustomPackageRequest }: CustomPackageRequestProps) => {
+const CustomPackageRequest = () => {
   const [showServices, setShowServices] = useState(false);
   
   return (
     <div className="mt-8">
       <div className="p-4 bg-muted rounded-lg mb-4">
-        <h3 className="text-lg font-semibold mb-2">Need a Custom Package?</h3>
+        <h3 className="text-lg font-semibold mb-2">À La Carte Services</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Have specific distribution needs? We can create a tailored package to match your film's unique requirements.
+          Need additional services? Browse our à la carte options to complement your distribution package.
         </p>
         <div className="flex flex-wrap gap-4">
           <Button 
@@ -25,11 +21,6 @@ const CustomPackageRequest = ({ onCustomPackageRequest }: CustomPackageRequestPr
             variant="outline"
           >
             {showServices ? "Hide À La Carte Services" : "View À La Carte Services"}
-          </Button>
-          <Button 
-            onClick={onCustomPackageRequest}
-          >
-            Request Custom Package
           </Button>
         </div>
       </div>
