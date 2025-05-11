@@ -13,17 +13,21 @@ const PayPalSuccessHandler: React.FC = () => {
     const searchParams = new URLSearchParams(location.search);
     const success = searchParams.get('success');
     const canceled = searchParams.get('canceled');
+    const planType = searchParams.get('plan');
     
     const handleSuccess = async () => {
       try {
         // Record subscription success in database via function
         await supabase.functions.invoke('record-subscription-success', {
-          body: { source: 'hosted-button' }
+          body: { 
+            source: 'hosted-button',
+            planType: planType || 'unknown' 
+          }
         });
         
         toast({
           title: "Subscription Successful!",
-          description: "Your subscription has been activated. Thank you for subscribing!",
+          description: `Your ${planType || ''} subscription has been activated. Thank you for subscribing!`,
         });
         
         // Navigate to dashboard after success
@@ -36,10 +40,12 @@ const PayPalSuccessHandler: React.FC = () => {
     };
     
     if (success === 'true') {
+      console.log(`PayPal subscription success detected for plan: ${planType || 'unknown'}`);
       handleSuccess();
     }
     
     if (canceled === 'true') {
+      console.log('PayPal subscription was canceled by user');
       toast({
         variant: "destructive",
         title: "Subscription Cancelled",

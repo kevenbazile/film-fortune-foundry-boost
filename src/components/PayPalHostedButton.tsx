@@ -109,7 +109,7 @@ const PayPalHostedButton: React.FC<PayPalHostedButtonProps> = ({
           <span className="text-sm text-gray-600">Loading payment options...</span>
         </div>
       )}
-      <div id={containerId} className={isRendering ? 'opacity-0' : 'opacity-100'}></div>
+      <div id={containerId} className={isRendering ? 'opacity-0' : 'opacity-100'} data-plan={plan} data-button-id={buttonId}></div>
     </div>
   );
 };
