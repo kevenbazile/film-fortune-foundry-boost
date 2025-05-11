@@ -1,7 +1,5 @@
-
 import { useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { RevenueData, Earning } from "./types";
 import { 
   getUserData, 
   fetchRevenueData, 
@@ -11,10 +9,11 @@ import {
 } from "./revenueDataService";
 import { useDisputeHandling } from "./useDisputeHandling";
 
-export { RevenueData, Earning } from "./types";
+// Fix the re-export to use 'export type'
+export type { RevenueData, Earning } from "./types";
 
 export function useRevenueData() {
-  const [revenue, setRevenue] = useState<RevenueData | null>(null);
+  const [revenue, setRevenue] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [userTier, setUserTier] = useState<'basic' | 'premium' | 'elite' | null>(null);
   const [filmId, setFilmId] = useState<string | null>(null);
