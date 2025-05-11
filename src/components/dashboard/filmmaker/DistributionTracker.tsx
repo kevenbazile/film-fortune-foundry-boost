@@ -5,8 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Check, AlertTriangle, Info } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Check, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useDistributionData } from "./distribution/useDistributionData";
@@ -22,43 +21,7 @@ const DistributionTracker = () => {
   
   const { toast } = useToast();
   const navigate = useNavigate();
-
-  const handleSubscribe = () => {
-    navigate("/subscription");
-    toast({
-      title: "Premium Features",
-      description: "Subscribe to unlock premium distribution features",
-    });
-  };
   
-  // Check if user needs to subscribe
-  const renderSubscriptionAlert = () => {
-    if (loading) {
-      return null;
-    }
-    
-    if (userTier !== 'premium' && userTier !== 'elite') {
-      return (
-        <Alert className="mb-6 border-amber-200 bg-amber-50">
-          <AlertTriangle className="h-5 w-5 text-amber-600" />
-          <AlertTitle className="text-amber-800">Premium Feature</AlertTitle>
-          <AlertDescription className="text-amber-700">
-            Some distribution features require an active subscription.
-            <Button 
-              onClick={handleSubscribe}
-              variant="outline" 
-              className="ml-2 bg-amber-100 text-amber-900 hover:bg-amber-200 hover:text-amber-900"
-            >
-              Subscribe Now
-            </Button>
-          </AlertDescription>
-        </Alert>
-      );
-    }
-    
-    return null;
-  };
-
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "completed":
@@ -91,8 +54,6 @@ const DistributionTracker = () => {
 
   return (
     <div className="space-y-8">
-      {renderSubscriptionAlert()}
-      
       <Card>
         <CardHeader>
           <CardTitle>Distribution Progress</CardTitle>
