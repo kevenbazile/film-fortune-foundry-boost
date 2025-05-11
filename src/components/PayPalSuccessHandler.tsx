@@ -30,9 +30,9 @@ const PayPalSuccessHandler: React.FC = () => {
           description: `Your ${planType || ''} subscription has been activated. Thank you for subscribing!`,
         });
         
-        // Navigate to dashboard after success
+        // Navigate to dashboard packages tab after success
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/dashboard?tab=packages');
         }, 2000);
       } catch (error) {
         console.error('Error recording subscription:', error);
@@ -51,6 +51,11 @@ const PayPalSuccessHandler: React.FC = () => {
         title: "Subscription Cancelled",
         description: "You've canceled the subscription process.",
       });
+      
+      // Redirect to packages tab when canceled
+      setTimeout(() => {
+        navigate('/dashboard?tab=packages');
+      }, 2000);
     }
   }, [location, navigate, toast]);
   

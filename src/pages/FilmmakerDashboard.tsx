@@ -8,15 +8,27 @@ import PaymentStatus from "@/components/dashboard/filmmaker/PaymentStatus";
 import CommissionBreakdown from "@/components/dashboard/filmmaker/CommissionBreakdown";
 import DistributionTracker from "@/components/dashboard/filmmaker/DistributionTracker";
 import { AlertCircle } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
 const FilmmakerDashboard = () => {
-  const [activeTab, setActiveTab] = useState("submission");
+  const [searchParams] = useSearchParams();
+  const tabFromUrl = searchParams.get('tab');
+  const validTabs = ['submission', 'packages', 'revenue', 'payment', 'commission', 'distribution'];
+  const initialTab = validTabs.includes(tabFromUrl || '') ? tabFromUrl : 'submission';
+  
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkFailed, setCheckFailed] = useState(false);
+
+  useEffect(() => {
+    // Update active tab when URL search params change
+    if (tabFromUrl && validTabs.includes(tabFromUrl)) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [tabFromUrl]);
 
   useEffect(() => {
     const checkSubscription = async () => {
@@ -62,9 +74,12 @@ const FilmmakerDashboard = () => {
           <AlertCircle className="h-4 w-4 text-blue-600" />
           <AlertDescription className="text-blue-700">
             Upgrade to our premium plan for enhanced distribution features.
-            <Link to="/subscription" className="ml-2 text-blue-700 font-medium underline underline-offset-4">
+            <button 
+              onClick={() => setActiveTab('packages')}
+              className="ml-2 text-blue-700 font-medium underline underline-offset-4"
+            >
               View Subscription Options
-            </Link>
+            </button>
           </AlertDescription>
         </Alert>
       )}
