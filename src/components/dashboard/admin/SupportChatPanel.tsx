@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
@@ -50,13 +51,13 @@ export default function SupportChatPanel() {
   // Fetch active chat rooms
   const fetchChatRooms = async () => {
     try {
-      const { data: active, error: activeError } = await supabase
+      const { data: activeData, error: activeError } = await supabase
         .from('chat_rooms')
         .select('*')
         .eq('status', 'active')
         .order('last_message_at', { ascending: false });
 
-      const { data: closed, error: closedError } = await supabase
+      const { data: closedData, error: closedError } = await supabase
         .from('chat_rooms')
         .select('*')
         .eq('status', 'closed')
@@ -67,15 +68,15 @@ export default function SupportChatPanel() {
       if (closedError) throw closedError;
 
       // Type cast the data to ensure compatibility with our ChatRoom type
-      setActiveRooms(active?.map(room => ({
+      setActiveRooms((activeData || []).map(room => ({
         ...room,
         status: room.status as 'active' | 'closed' // Force the status to be the correct type
-      })) || []);
+      })));
       
-      setClosedRooms(closed?.map(room => ({
+      setClosedRooms((closedData || []).map(room => ({
         ...room,
         status: room.status as 'active' | 'closed' // Force the status to be the correct type
-      })) || []);
+      })));
     } catch (error) {
       console.error('Error fetching chat rooms:', error);
       toast({
@@ -98,10 +99,10 @@ export default function SupportChatPanel() {
       if (error) throw error;
       
       // Type cast the data to ensure compatibility with our ChatMessage type
-      setMessages(data?.map(message => ({
+      setMessages((data || []).map(message => ({
         ...message,
         message_type: message.message_type as 'text' | 'system' // Force the message_type to be the correct type
-      })) || []);
+      })));
       
       // Mark messages as read
       await supabase
@@ -244,8 +245,9 @@ export default function SupportChatPanel() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'chat_messages' },
         (payload) => {
-          const payloadData = payload.new;
-          if (currentRoom && payloadData && payloadData.room_id === currentRoom.id) {
+          // Safely check if the payload has a room_id and if it matches the current room
+          const payloadNew = payload.new as { room_id?: string } | null;
+          if (currentRoom && payloadNew && payloadNew.room_id === currentRoom.id) {
             fetchMessages(currentRoom.id);
           }
         }

@@ -29,11 +29,11 @@ const DistributionManagement = () => {
 
   const fetchDistributions = async () => {
     try {
-      // Fetch active distributions
+      // Fetch active distributions - using only the allowed enum values 'live' (not 'performance')
       const { data: activeData } = await supabase
         .from('distributions')
         .select('*, films(*)')
-        .in('status', ['live', 'performance']);
+        .eq('status', 'live');
 
       // Fetch pending distributions
       const { data: pendingData } = await supabase
@@ -75,7 +75,7 @@ const DistributionManagement = () => {
     window.open(url, '_blank');
   };
 
-  const handleAdvanceStage = async (id: string, status: string) => {
+  const handleAdvanceStage = async (id: string, status: "encoding" | "metadata" | "submission" | "live" | "completed") => {
     try {
       await supabase
         .from('distributions')
