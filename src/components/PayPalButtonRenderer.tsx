@@ -1,166 +1,90 @@
 
-import React, { useEffect, useRef } from 'react';
-import { useToast } from "@/hooks/use-toast";
-import { renderPayPalButtons, createPayPalSubscription, activatePayPalSubscription } from "@/utils/paypal-utils";
+// Remove any references to PayPal Buttons API, since we're only using HostedButtons now
+// This file is likely not used anymore with the hosted buttons approach, but we'll fix the errors
 
-interface PayPalButtonRendererProps {
-  sdkReady: boolean;
-  onSuccess?: (subscriptionId: string) => void;
-  onError?: (error: any) => void;
-  planPrice?: string;
+import React, { useEffect, useState } from 'react';
+import { Loader2 } from 'lucide-react';
+
+// Define proper PayPal window types for hosted buttons
+declare global {
+  interface Window {
+    paypal?: {
+      HostedButtons: (options: { hostedButtonId: string }) => {
+        render: (selector: string) => Promise<void>;
+      };
+    };
+  }
 }
 
-const PayPalButtonRenderer = ({ 
-  sdkReady, 
-  onSuccess, 
-  onError, 
-  planPrice 
-}: PayPalButtonRendererProps) => {
-  const { toast } = useToast();
-  const containerId = 'paypal-button-container';
-  const renderAttemptedRef = useRef(false);
+interface PayPalButtonRendererProps {
+  buttonId: string;
+  onApprove?: (data: any) => void;
+  onError?: (error: any) => void;
+  onCancel?: () => void;
+}
+
+const PayPalButtonRenderer: React.FC<PayPalButtonRendererProps> = ({
+  buttonId,
+  onApprove,
+  onError,
+  onCancel
+}) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const containerId = `paypal-button-container-${buttonId}`;
 
   useEffect(() => {
-    if (!sdkReady || !window.paypal) {
-      console.log('PayPal SDK not ready or not loaded yet');
-      return;
-    }
-    
-    if (renderAttemptedRef.current) {
-      console.log('Render already attempted, skipping');
+    // Check if PayPal SDK is loaded
+    if (!window.paypal) {
+      setError('PayPal SDK not loaded');
+      setLoading(false);
       return;
     }
 
-    renderAttemptedRef.current = true;
-    console.log('Rendering PayPal buttons now that SDK is ready');
-    
     try {
-      // Define handlers for PayPal button actions
-      const handleCreateSubscription = async (data: any, actions: any) => {
-        try {
-          console.log('Creating subscription with price:', planPrice);
-          // For direct SDK approach, use actions to create subscription
-          if (actions && actions.subscription && actions.subscription.create) {
-            return actions.subscription.create({
-              plan_id: 'P-5ML4271244454362WXNWU5NQ' // This is normally fetched from your backend
-            });
-          } else {
-            // Fallback to our API method if direct creation isn't available
-            return await createPayPalSubscription(planPrice);
-          }
-        } catch (error) {
-          console.error('Error creating subscription:', error);
-          toast({
-            variant: "destructive",
-            title: "Subscription Error",
-            description: "Failed to create subscription. Please try again.",
-          });
-          if (onError) onError(error);
-          throw error;
-        }
-      };
-
-      const handleApprove = async (data: any) => {
-        try {
-          // Data contains subscriptionID
-          console.log('Subscription approved:', data);
-          
-          if (data.subscriptionID) {
-            await activatePayPalSubscription(data.subscriptionID);
-            
-            toast({
-              title: "Success!",
-              description: "Your subscription has been activated successfully.",
-            });
-            
-            if (onSuccess) onSuccess(data.subscriptionID);
-          } else {
-            throw new Error('No subscription ID returned from PayPal');
-          }
-          
-        } catch (error) {
-          console.error('Error handling subscription approval:', error);
-          toast({
-            variant: "destructive",
-            title: "Activation Error",
-            description: "There was a problem activating your subscription.",
-          });
-          if (onError) onError(error);
-        }
-      };
-
-      const handleError = (err: any) => {
-        console.error('PayPal Error:', err);
-        toast({
-          variant: "destructive",
-          title: "PayPal Error",
-          description: "There was a problem with PayPal. Please try again later.",
+      // For hosted buttons, we use HostedButtons API instead of Buttons API
+      if (window.paypal.HostedButtons) {
+        window.paypal.HostedButtons({
+          hostedButtonId: buttonId
+        })
+        .render(`#${containerId}`)
+        .then(() => {
+          setLoading(false);
+        })
+        .catch((err: any) => {
+          console.error('PayPal button render error:', err);
+          setError('Failed to load PayPal button');
+          setLoading(false);
+          if (onError) onError(err);
         });
-        if (onError) onError(err);
-      };
-
-      const handleCancel = () => {
-        toast({
-          title: "Cancelled",
-          description: "Subscription process was cancelled.",
-        });
-      };
-
-      // Make sure container exists before rendering buttons
-      const containerElement = document.getElementById(containerId);
-      if (!containerElement) {
-        console.error('PayPal button container not found');
-        return;
+      } else {
+        setError('PayPal Hosted Buttons API not available');
+        setLoading(false);
       }
-
-      console.log('Container found, rendering PayPal buttons');
-      
-      // Clear any existing buttons
-      containerElement.innerHTML = '';
-
-      // Render the PayPal buttons - try direct rendering first
-      try {
-        if (window.paypal && window.paypal.Buttons) {
-          window.paypal.Buttons({
-            style: {
-              shape: 'rect',
-              color: 'blue',
-              layout: 'vertical',
-              label: 'subscribe'
-            },
-            createSubscription: handleCreateSubscription,
-            onApprove: handleApprove,
-            onError: handleError,
-            onCancel: handleCancel
-          }).render(`#${containerId}`);
-        } else {
-          // Fallback to our utility function
-          renderPayPalButtons(
-            containerId, 
-            handleCreateSubscription,
-            handleApprove,
-            handleError,
-            handleCancel
-          );
-        }
-      } catch (error) {
-        console.error('Error rendering PayPal buttons:', error);
-        if (onError) onError(error);
-      }
-    } catch (error) {
-      console.error('Error setting up PayPal buttons:', error);
-      if (onError) onError(error);
+    } catch (err) {
+      console.error('Error rendering PayPal button:', err);
+      setError('Error rendering PayPal button');
+      setLoading(false);
+      if (onError) onError(err);
     }
-  }, [sdkReady, toast, onSuccess, onError, planPrice]);
+  }, [buttonId, containerId, onApprove, onCancel, onError]);
+
+  if (error) {
+    return <div className="text-red-500">Error: {error}</div>;
+  }
 
   return (
-    <div>
-      <div id={containerId} className="w-full" />
-      {!sdkReady && (
-        <div className="text-sm text-center text-muted-foreground mt-2">
-          Loading payment system...
+    <div className="paypal-button-container">
+      {loading && (
+        <div className="flex items-center justify-center py-4">
+          <Loader2 className="h-5 w-5 animate-spin mr-2" />
+          <span>Loading PayPal...</span>
         </div>
       )}
+      <div 
+        id={containerId} 
+        className={loading ? 'opacity-0 h-0' : 'opacity-100'}
+      ></div>
     </div>
   );
 };

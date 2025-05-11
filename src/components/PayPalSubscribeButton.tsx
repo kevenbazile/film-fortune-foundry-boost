@@ -10,7 +10,11 @@ import PayPalHostedButton from "@/components/PayPalHostedButton";
 // This is declared as a global interface to work with the PayPal SDK
 declare global {
   interface Window {
-    paypal?: any;
+    paypal?: {
+      HostedButtons: (options: { hostedButtonId: string }) => {
+        render: (selector: string) => Promise<void>;
+      };
+    };
   }
 }
 
