@@ -6,9 +6,12 @@
  * Using PayPal Hosted Button approach for subscriptions
  */
 
-  
+// PayPal configuration object
+export const PAYPAL_CONFIG = {
   // API URLs - using production URLs
   API_URL: 'https://api-m.paypal.com', // Production URL
+  MODE: 'live',
+  CLIENT_ID: 'AWLqCibRJ6ZC89ARQ8HFCoL9z57Lg0qvbY2HtLKrJwmqjM8C3XRlR2h9b0_g5m3Wb8TRGjP30Kj_td75'
 };
 
 // Plan details mapping to hosted button IDs
