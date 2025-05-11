@@ -9,6 +9,107 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      ai_conversations: {
+        Row: {
+          ai_response: string
+          context: Json | null
+          created_at: string | null
+          id: string
+          user_id: string | null
+          user_message: string
+        }
+        Insert: {
+          ai_response: string
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          user_id?: string | null
+          user_message: string
+        }
+        Update: {
+          ai_response?: string
+          context?: Json | null
+          created_at?: string | null
+          id?: string
+          user_id?: string | null
+          user_message?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          file_name: string | null
+          file_url: string | null
+          id: string
+          is_read: boolean | null
+          message_type: string | null
+          room_id: string | null
+          sender_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_type?: string | null
+          room_id?: string | null
+          sender_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          file_name?: string | null
+          file_url?: string | null
+          id?: string
+          is_read?: boolean | null
+          message_type?: string | null
+          room_id?: string | null
+          sender_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_rooms: {
+        Row: {
+          created_at: string | null
+          filmmaker_id: string | null
+          id: string
+          last_message_at: string | null
+          room_name: string | null
+          staff_id: string | null
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          filmmaker_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          room_name?: string | null
+          staff_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          filmmaker_id?: string | null
+          id?: string
+          last_message_at?: string | null
+          room_name?: string | null
+          staff_id?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       community_fund_applications: {
         Row: {
           additional_documents: Json | null
@@ -336,6 +437,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_read: boolean | null
+          related_id: string | null
+          title: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_read?: boolean | null
+          related_id?: string | null
+          title: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_read?: boolean | null
+          related_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       payout_requests: {
         Row: {

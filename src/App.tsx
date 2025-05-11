@@ -17,6 +17,7 @@ import { AuthProvider } from "./context/AuthContext";
 import { useEffect } from "react";
 import { ensureStorageBuckets } from "./integrations/supabase/storage";
 import PayPalSuccessHandler from "./components/PayPalSuccessHandler";
+import { AIChatBot } from "./components/dashboard/filmmaker/AIChatBot";
 
 const queryClient = new QueryClient();
 
@@ -73,6 +74,9 @@ const App = () => (
       <AuthProvider>
         <BrowserRouter>
           <AppContent />
+          <AuthGuard>
+            <AIChatBot userId="user-1" /> {/* We'll get the actual userId from auth context in a real implementation */}
+          </AuthGuard>
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
