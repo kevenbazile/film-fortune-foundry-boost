@@ -36,6 +36,45 @@ export const SUBSCRIPTION_PLANS = {
   }
 };
 
+// À la carte services available for purchase
+export const ALACARTE_SERVICES = {
+  BUDGET_CONSULTATION: {
+    name: "Budget Breakdown Consultation",
+    buttonId: "XVLX289JG9JFC",
+    price: "75",
+    currency: "USD",
+    description: "Get a detailed analysis of your film's distribution budget and ROI projections."
+  },
+  PITCH_DECK: {
+    name: "Pitch Deck / Investment Call",
+    buttonId: "VF7GHS3UTMX52",
+    price: "50",
+    currency: "USD",
+    description: "Professional pitch deck creation and investor call preparation."
+  },
+  CASTING_CALL: {
+    name: "Casting Call", 
+    buttonId: "67JBK3C4Z8NZU",
+    price: "50",
+    currency: "USD",
+    description: "Professional casting call setup and management services."
+  },
+  FILM_FESTIVAL: {
+    name: "Film Festival Submission & Video Review",
+    buttonId: "5XYMZEFQCN2GW",
+    price: "75",
+    currency: "USD",
+    description: "Strategic festival submissions with video review consultation (shorts/trailers only)."
+  },
+  SHARK_TANK: {
+    name: "Shark Tank Live-a-thon Entry",
+    buttonId: "Q8ANQHXU3MH82",
+    price: "75", 
+    currency: "USD",
+    description: "Entry to our film festival \"Shark Tank\" pitch event."
+  }
+};
+
 // Adding this for backwards compatibility with other components
 export const MONTHLY_PLAN = {
   BASIC: SUBSCRIPTION_PLANS.BASIC,
