@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAIAssistant } from '@/hooks/useAIAssistant';
-import { Bot, Minimize2, Maximize2, Send, Loader2 } from 'lucide-react';
+import { Bot, Minimize2, Send, Loader2, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 interface AIChatBotProps {
   userId: string;
@@ -102,6 +103,20 @@ export const AIChatBot = ({ userId, isMinimized: initialMinimized = true }: AICh
                     </Button>
                   ))}
                 </div>
+              </div>
+            );
+          }
+          
+          if (message.role === 'transfer') {
+            return (
+              <div key={index} className="w-full">
+                <Alert className="border-amber-500 bg-amber-50">
+                  <Users className="h-4 w-4 text-amber-500" />
+                  <AlertTitle className="text-amber-700">Transferring to support team</AlertTitle>
+                  <AlertDescription className="text-amber-600 text-sm">
+                    {message.content}
+                  </AlertDescription>
+                </Alert>
               </div>
             );
           }

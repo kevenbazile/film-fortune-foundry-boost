@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,6 +17,7 @@ import { useEffect } from "react";
 import { ensureStorageBuckets } from "./integrations/supabase/storage";
 import PayPalSuccessHandler from "./components/PayPalSuccessHandler";
 import { AIChatBot } from "./components/dashboard/filmmaker/AIChatBot";
+import { useAuth } from "./context/AuthContext";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +32,9 @@ const AppContent = () => {
 
     initializeStorage();
   }, []);
+
+  // Get actual userId from auth context
+  const { user } = useAuth();
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -62,6 +65,9 @@ const AppContent = () => {
         </Routes>
       </main>
       <Footer />
+      <AuthGuard>
+        <AIChatBot userId={user?.id || ""} /> {/* Use actual user ID from auth context */}
+      </AuthGuard>
     </div>
   );
 };
@@ -74,9 +80,7 @@ const App = () => (
       <AuthProvider>
         <BrowserRouter>
           <AppContent />
-          <AuthGuard>
-            <AIChatBot userId="user-1" /> {/* We'll get the actual userId from auth context in a real implementation */}
-          </AuthGuard>
+          
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

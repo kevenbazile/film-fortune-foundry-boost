@@ -1,10 +1,14 @@
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { toast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { getUserData } from '@/components/dashboard/filmmaker/revenue/services/userDataService';
+import { fetchUserApplications } from '@/components/dashboard/filmmaker/investment/services/investmentService';
 
-type MessageRole = 'user' | 'assistant' | 'system' | 'suggestions';
+export type MessageRole = 'user' | 'assistant' | 'system' | 'suggestions' | 'transfer';
 
-type Message = {
+export type Message = {
   role: MessageRole;
   content: string;
   suggestions?: string[];
@@ -18,6 +22,7 @@ export function useAIAssistant() {
     }
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
 
   // Film distribution responses database
   const responses = {
@@ -45,13 +50,79 @@ export function useAIAssistant() {
       general: "I'm here to help with your film distribution questions. Feel free to ask about specific features, processes, or how to maximize your film's reach and revenue.",
       support: "For additional support, you can contact our team via the help center or schedule a consultation with a distribution specialist.",
       resources: "Check out our Knowledge Base for tutorials, guides, and best practices for effective film distribution strategies."
+    },
+    account: {
+      general: "For specific account inquiries, I'll need to connect you with a member of our support team who can access your account details.",
+      transfer: "I'll transfer you to our support team who can assist with your account-specific questions. They typically respond within 24 hours."
     }
   };
 
-  // Generate fallback response based on message content
-  const generateFallbackResponse = (message: string): string => {
-    const msg = message.toLowerCase();
+  // Check if the query is related to personal account data
+  const needsHumanSupport = (query: string): boolean => {
+    const accountTerms = [
+      'my account', 'my film', 'my revenue', 'my earnings', 'my payment', 'my payout', 'my balance',
+      'my profile', 'my subscription', 'my tier', 'my application', 'specific details', 'account details',
+      'account access'
+    ];
     
+    const lowercaseQuery = query.toLowerCase();
+    return accountTerms.some(term => lowercaseQuery.includes(term));
+  };
+
+  // Fetch user-specific data from Supabase to enhance responses
+  const fetchUserContext = async (): Promise<any> => {
+    if (!user) return null;
+    
+    try {
+      // Get basic user data including subscription tier
+      const userData = await getUserData();
+      
+      // Get user's investment applications if they exist
+      let applications = [];
+      try {
+        if (userData.userId) {
+          applications = await fetchUserApplications(userData.userId);
+        }
+      } catch (error) {
+        console.error("Error fetching applications:", error);
+      }
+      
+      return {
+        userTier: userData.userTier,
+        hasFilms: userData.filmId !== null,
+        applicationsCount: applications.length,
+      };
+    } catch (error) {
+      console.error("Error fetching user context:", error);
+      return null;
+    }
+  };
+
+  // Generate fallback response based on message content and user context
+  const generateResponse = async (message: string): Promise<string> => {
+    const msg = message.toLowerCase();
+    const userContext = await fetchUserContext();
+    
+    // Check if query needs human support
+    if (needsHumanSupport(message)) {
+      // Log the query to the database for later follow-up by staff
+      if (user?.id) {
+        try {
+          await supabase.from('ai_conversations').insert({
+            user_id: user.id,
+            user_message: message,
+            ai_response: "Transferred to human support",
+            context: userContext
+          });
+        } catch (error) {
+          console.error("Error logging conversation:", error);
+        }
+      }
+      
+      return "account.transfer";
+    }
+    
+    // Generate response based on message content
     if (msg.includes('distribute') || msg.includes('distribution')) {
       if (msg.includes('step') || msg.includes('process')) {
         return responses.distribution.steps;
@@ -94,7 +165,7 @@ export function useAIAssistant() {
     return responses.help.general;
   };
 
-  // Generate suggestions based on user message
+  // Generate suggestions based on user message and context
   const generateSuggestions = (message: string): string[] => {
     const msg = message.toLowerCase();
     const suggestions: string[] = [];
@@ -130,26 +201,60 @@ export function useAIAssistant() {
     
     try {
       // Generate response using the fallback mechanism
-      const response = generateFallbackResponse(input);
+      const responseKey = await generateResponse(input);
+      let response: string;
+      let isTransfer = false;
+      
+      // Check if we need to transfer to human support
+      if (responseKey === "account.transfer") {
+        response = responses.account.transfer;
+        isTransfer = true;
+      } else {
+        response = responseKey;
+      }
       
       // Short delay to simulate processing
       await new Promise(resolve => setTimeout(resolve, 800));
       
       // Add assistant response to chat
-      const assistantMessage: Message = { role: 'assistant', content: response };
-      setMessages(prev => [...prev, assistantMessage]);
+      const assistantMessage: Message = { 
+        role: isTransfer ? 'transfer' : 'assistant', 
+        content: response 
+      };
+      setMessages(prev => [...prev, assistantMessage as Message]);
       
-      // Generate and add suggestions
-      const suggestions = generateSuggestions(input);
-      if (suggestions.length > 0) {
-        setMessages(prev => [
-          ...prev,
-          {
-            role: 'suggestions',
-            content: '',
-            suggestions
-          }
-        ]);
+      // Create notification for transfer requests
+      if (isTransfer && user?.id) {
+        try {
+          await supabase.from('notifications').insert({
+            user_id: user.id,
+            title: 'Support Request from AI Chat',
+            description: `A user asked: "${input}"`,
+            type: 'support_request'
+          });
+          
+          toast({
+            title: "Support Request Sent",
+            description: "Our team has been notified and will contact you soon.",
+          });
+        } catch (error) {
+          console.error("Error creating notification:", error);
+        }
+      }
+      
+      // Generate and add suggestions if not transferring
+      if (!isTransfer) {
+        const suggestions = generateSuggestions(input);
+        if (suggestions.length > 0) {
+          setMessages(prev => [
+            ...prev,
+            {
+              role: 'suggestions',
+              content: '',
+              suggestions
+            } as Message
+          ]);
+        }
       }
       
     } catch (error) {
