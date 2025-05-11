@@ -49,7 +49,7 @@ const Footer = () => {
         
         <div className="border-t border-border mt-8 pt-8 text-sm text-muted-foreground flex flex-col md:flex-row justify-between">
           <div>
-            &copy; {new Date().getFullYear()} SceneVox. All rights reserved. TechMaych Copyright
+            &copy; {new Date().getFullYear()} SceneVox. All rights reserved. TechMatch Copyright
           </div>
           <div className="mt-4 md:mt-0">
             Empowering filmmakers to succeed in the digital distribution landscape.
