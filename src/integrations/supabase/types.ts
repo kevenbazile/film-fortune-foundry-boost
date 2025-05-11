@@ -59,6 +59,38 @@ export type Database = {
           },
         ]
       }
+      film_analytics: {
+        Row: {
+          film_id: string
+          growth_rate: number
+          id: string
+          last_updated: string
+          total_revenue: number
+        }
+        Insert: {
+          film_id: string
+          growth_rate?: number
+          id?: string
+          last_updated?: string
+          total_revenue?: number
+        }
+        Update: {
+          film_id?: string
+          growth_rate?: number
+          id?: string
+          last_updated?: string
+          total_revenue?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "film_analytics_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       film_assets: {
         Row: {
           asset_type: string
@@ -169,6 +201,38 @@ export type Database = {
           },
         ]
       }
+      platform_revenue: {
+        Row: {
+          created_at: string
+          film_id: string
+          id: string
+          platform_name: string
+          revenue: number
+        }
+        Insert: {
+          created_at?: string
+          film_id: string
+          id?: string
+          platform_name: string
+          revenue?: number
+        }
+        Update: {
+          created_at?: string
+          film_id?: string
+          id?: string
+          platform_name?: string
+          revenue?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_revenue_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           bio: string | null
@@ -207,6 +271,38 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      revenue_growth: {
+        Row: {
+          created_at: string
+          film_id: string
+          id: string
+          month: string
+          revenue: number
+        }
+        Insert: {
+          created_at?: string
+          film_id: string
+          id?: string
+          month: string
+          revenue?: number
+        }
+        Update: {
+          created_at?: string
+          film_id?: string
+          id?: string
+          month?: string
+          revenue?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "revenue_growth_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       revenue_shares: {
         Row: {
@@ -303,6 +399,48 @@ export type Database = {
           price?: number
           timeline_days?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          id: string
+          metadata: Json | null
+          plan_id: string
+          product_id: string
+          start_date: string
+          status: string
+          subscription_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          metadata?: Json | null
+          plan_id: string
+          product_id: string
+          start_date: string
+          status: string
+          subscription_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          metadata?: Json | null
+          plan_id?: string
+          product_id?: string
+          start_date?: string
+          status?: string
+          subscription_id?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

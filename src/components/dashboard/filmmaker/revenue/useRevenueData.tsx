@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -40,15 +41,36 @@ export function useRevenueData() {
         if (sessionData?.session?.user?.id) {
           setUserId(sessionData.session.user.id);
           
-          // Get user tier
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('tier')
-            .eq('id', sessionData.session.user.id)
+          // Get user subscription
+          const { data: subscriptionData, error: subscriptionError } = await supabase
+            .from('subscriptions')
+            .select('*')
+            .eq('user_id', sessionData.session.user.id)
+            .eq('status', 'active')
+            .order('created_at', { ascending: false })
+            .limit(1)
             .single();
           
-          if (profileData?.tier) {
-            setUserTier(profileData.tier as 'basic' | 'premium' | 'elite');
+          if (subscriptionData) {
+            // Extract tier from plan_id
+            let tier: 'basic' | 'premium' | 'elite' = 'basic';
+            if (subscriptionData.plan_id.includes('premium')) {
+              tier = 'premium';
+            } else if (subscriptionData.plan_id.includes('elite')) {
+              tier = 'elite';
+            }
+            setUserTier(tier);
+          } else {
+            // Check profiles table as fallback
+            const { data: profileData } = await supabase
+              .from('profiles')
+              .select('tier')
+              .eq('id', sessionData.session.user.id)
+              .single();
+            
+            if (profileData?.tier) {
+              setUserTier(profileData.tier as 'basic' | 'premium' | 'elite');
+            }
           }
           
           // Get most recent film ID
@@ -62,13 +84,13 @@ export function useRevenueData() {
           
           if (filmData?.id) {
             setFilmId(filmData.id);
+            
+            // Now fetch revenue and earnings data
+            await Promise.all([
+              fetchRevenueData(filmData.id),
+              fetchEarningsData(sessionData.session.user.id)
+            ]);
           }
-          
-          // Now fetch revenue and earnings data
-          await Promise.all([
-            fetchRevenueData(filmData?.id),
-            fetchEarningsData(sessionData.session.user.id)
-          ]);
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
@@ -80,34 +102,72 @@ export function useRevenueData() {
     getUserData();
   }, []);
 
-  const fetchRevenueData = async (filmId: string | null | undefined) => {
+  const fetchRevenueData = async (filmId: string) => {
     if (!filmId) return;
     
     try {
-      // Get revenue data from Supabase
-      // Note: In a real app, you'd fetch actual data from revenue_shares or similar tables
-      
-      // For our implementation, we'll simulate revenue data
-      const mockRevenueData: RevenueData = {
-        totalRevenue: 5280.50,
-        growthRate: 16.7,
-        daysSinceRelease: 78,
-        platformRevenue: [
-          { name: "YouTube", revenue: 1250 },
-          { name: "Amazon Prime", revenue: 2380 },
-          { name: "Netflix", revenue: 1650 }
-        ],
-        growthTimeline: [
-          { month: "Jan", revenue: 450 },
-          { month: "Feb", revenue: 950 },
-          { month: "Mar", revenue: 1800 },
-          { month: "Apr", revenue: 2650 },
-          { month: "May", revenue: 3980 },
-          { month: "Jun", revenue: 5280 }
-        ]
-      };
-      
-      setRevenue(mockRevenueData);
+      // Get analytics data from film_analytics table
+      const { data: analyticsData, error: analyticsError } = await supabase
+        .from('film_analytics')
+        .select('*')
+        .eq('film_id', filmId)
+        .single();
+
+      // Get platform revenue data
+      const { data: platformData, error: platformError } = await supabase
+        .from('platform_revenue')
+        .select('*')
+        .eq('film_id', filmId);
+
+      // Get revenue growth timeline
+      const { data: growthData, error: growthError } = await supabase
+        .from('revenue_growth')
+        .select('*')
+        .eq('film_id', filmId)
+        .order('month', { ascending: true });
+
+      // Get film release date to calculate days since release
+      const { data: filmData, error: filmError } = await supabase
+        .from('films')
+        .select('created_at')
+        .eq('id', filmId)
+        .single();
+
+      // Check if we have any real data
+      if (analyticsData || (platformData && platformData.length > 0) || (growthData && growthData.length > 0)) {
+        // Calculate days since release
+        const releaseDate = filmData?.created_at ? new Date(filmData.created_at) : new Date();
+        const daysSinceRelease = Math.floor((new Date().getTime() - releaseDate.getTime()) / (1000 * 60 * 60 * 24));
+
+        // Format platform revenue data
+        const formattedPlatformData = platformData?.map(item => ({
+          name: item.platform_name,
+          revenue: item.revenue
+        })) || [];
+
+        // Format growth timeline data
+        const formattedGrowthData = growthData?.map(item => ({
+          month: item.month,
+          revenue: item.revenue
+        })) || [];
+
+        setRevenue({
+          totalRevenue: analyticsData?.total_revenue || 0,
+          growthRate: analyticsData?.growth_rate || 0,
+          daysSinceRelease,
+          platformRevenue: formattedPlatformData,
+          growthTimeline: formattedGrowthData
+        });
+      } else {
+        // Use sample data if no real data exists yet
+        setRevenue({
+          totalRevenue: 0,
+          growthRate: 0,
+          daysSinceRelease: 0,
+          platformRevenue: [],
+          growthTimeline: []
+        });
+      }
     } catch (error) {
       console.error("Error fetching revenue data:", error);
       toast({
@@ -118,15 +178,13 @@ export function useRevenueData() {
     }
   };
 
-  const fetchEarningsData = async (userId: string | null | undefined) => {
+  const fetchEarningsData = async (userId: string) => {
     if (!userId) return;
     
     try {
-      // Get earnings data from Supabase
-      // Note: In a real app, you'd fetch actual data from earnings or similar tables
-      
-      // For our implementation, we'll simulate earnings data
-      setEarnings([
+      // In a real app, we would fetch from revenue_shares table
+      // For now, we'll use sample data since earnings aren't part of our tables yet
+      const sampleEarnings: Earning[] = [
         {
           id: '1',
           date: '2025-04-15',
@@ -160,7 +218,9 @@ export function useRevenueData() {
             type: 'platform'
           }
         }
-      ]);
+      ];
+      
+      setEarnings(sampleEarnings);
     } catch (error) {
       console.error("Error fetching earnings data:", error);
       toast({
@@ -174,16 +234,6 @@ export function useRevenueData() {
   const handleDispute = async (earningId: string, reason: string) => {
     try {
       // In a real app, you'd submit the dispute to Supabase
-      // const { error } = await supabase
-      //   .from('earnings_disputes')
-      //   .insert({
-      //     earning_id: earningId,
-      //     user_id: userId,
-      //     reason,
-      //     status: 'pending',
-      //     created_at: new Date().toISOString()
-      //   });
-      
       // For our implementation, we'll just update the local state
       setEarnings(earnings.map(earning => 
         earning.id === earningId 
@@ -245,8 +295,8 @@ export function useRevenueData() {
     setLoading(true);
     try {
       await Promise.all([
-        fetchRevenueData(filmId),
-        fetchEarningsData(userId)
+        fetchRevenueData(filmId!),
+        fetchEarningsData(userId!)
       ]);
       
       toast({
