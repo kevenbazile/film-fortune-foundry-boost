@@ -9,6 +9,7 @@ export interface Earning {
     name: string;
     type: 'platform' | 'direct';
   };
+  notes?: string;
 }
 
 export interface RevenueData {

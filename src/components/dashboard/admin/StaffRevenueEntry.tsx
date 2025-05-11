@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +30,7 @@ interface RevenueEntry {
   payment_period_end?: string;
   views?: number;
   transaction_id?: string;
+  notes?: string;
   status: string;
   entered_at: string;
   entered_by?: string;

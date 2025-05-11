@@ -10,7 +10,7 @@ export async function fetchEarningsData(userId: string): Promise<Earning[]> {
     // Try to fetch from platform_earnings table first
     const { data: earningsData, error: earningsError } = await supabase
       .from('platform_earnings')
-      .select('id, film_id, platform, amount, payment_date, payment_period_start, payment_period_end, views, status, transaction_id, films!inner(user_id)')
+      .select('id, film_id, platform, amount, payment_date, payment_period_start, payment_period_end, views, status, transaction_id, notes, films!inner(user_id)')
       .eq('films.user_id', userId)
       .order('payment_date', { ascending: false });
     
@@ -27,7 +27,8 @@ export async function fetchEarningsData(userId: string): Promise<Earning[]> {
         date: entry.payment_date,
         platform: entry.platform,
         amount: entry.amount,
-        status: entry.status,
+        status: transformStatus(entry.status),
+        notes: entry.notes,
         payerInfo: {
           name: entry.platform,
           type: 'platform'
@@ -41,6 +42,15 @@ export async function fetchEarningsData(userId: string): Promise<Earning[]> {
     console.error("Error fetching earnings data:", error);
     return getSampleEarningsData();
   }
+}
+
+// Helper function to transform status string to valid Earning status type
+function transformStatus(status: string): 'pending' | 'paid' | 'disputed' {
+  if (status === 'pending' || status === 'paid' || status === 'disputed') {
+    return status as 'pending' | 'paid' | 'disputed';
+  }
+  // Default to pending if the status isn't one of the expected values
+  return 'pending';
 }
 
 // Helper function to get sample data if real data is not available

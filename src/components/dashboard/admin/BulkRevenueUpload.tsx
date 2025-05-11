@@ -57,7 +57,14 @@ export const BulkRevenueUpload: React.FC<BulkRevenueUploadProps> = ({ onEntriesU
           headers.forEach((header, index) => {
             entry[header] = (row[index] || '').trim();
           });
-          return entry as CsvEntry;
+          
+          // Validate required fields
+          const csvEntry = entry as unknown as CsvEntry;
+          if (!csvEntry.film_id || !csvEntry.platform || !csvEntry.amount || !csvEntry.payment_date) {
+            throw new Error('Missing required fields in CSV');
+          }
+          
+          return csvEntry;
         });
         
         setProcessedEntries(entries);
@@ -171,3 +178,4 @@ export const BulkRevenueUpload: React.FC<BulkRevenueUploadProps> = ({ onEntriesU
     </div>
   );
 };
+
