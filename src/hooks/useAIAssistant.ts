@@ -2,8 +2,10 @@
 import { useState } from 'react';
 import { pipeline } from '@huggingface/transformers';
 
+type MessageRole = 'user' | 'assistant' | 'system' | 'suggestions';
+
 type Message = {
-  role: 'user' | 'assistant' | 'system' | 'suggestions';
+  role: MessageRole;
   content: string;
   suggestions?: string[];
 };
@@ -33,7 +35,7 @@ export function useAIAssistant() {
         'text-generation',
         'distilgpt2',
         { 
-          quantized: true // Use quantized model for better performance
+          // Remove quantized option as it's not supported
         }
       );
       
@@ -45,7 +47,7 @@ export function useAIAssistant() {
       setMessages(prev => [
         ...prev,
         { 
-          role: 'system', 
+          role: 'system' as MessageRole, 
           content: 'Model loaded successfully. I can assist with film distribution questions.' 
         }
       ]);
@@ -54,7 +56,7 @@ export function useAIAssistant() {
       setMessages(prev => [
         ...prev,
         { 
-          role: 'system', 
+          role: 'system' as MessageRole,
           content: 'Failed to load AI model. Using fallback mode.' 
         }
       ]);
@@ -68,7 +70,7 @@ export function useAIAssistant() {
     if (!input.trim() || isLoading) return;
     
     // Add user message to chat
-    const userMessage = { role: 'user', content: input };
+    const userMessage: Message = { role: 'user', content: input };
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     
@@ -109,7 +111,7 @@ export function useAIAssistant() {
       }
       
       // Add assistant response to chat
-      const assistantMessage = { role: 'assistant', content: response.trim() };
+      const assistantMessage: Message = { role: 'assistant', content: response.trim() };
       setMessages(prev => [...prev, assistantMessage]);
       
       // Add suggestions
@@ -127,7 +129,7 @@ export function useAIAssistant() {
       
     } catch (error) {
       console.error("Error generating response:", error);
-      const errorMessage = { 
+      const errorMessage: Message = { 
         role: 'assistant', 
         content: 'Sorry, I encountered an error. Please try again.' 
       };
