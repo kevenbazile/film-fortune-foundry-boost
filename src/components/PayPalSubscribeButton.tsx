@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePayPalSDK } from "@/hooks/usePayPalSDK";
 import PayPalButtonRenderer from "@/components/PayPalButtonRenderer";
@@ -23,20 +23,34 @@ const PayPalSubscribeButton = ({ onSuccess, onError, planPrice }: PayPalSubscrib
   const { loading, sdkReady, scriptError, paypalMode } = usePayPalSDK();
   const { toast } = useToast();
 
-  // Show error message if script failed to load
+  const handleRetry = () => {
+    toast({
+      title: "Retrying",
+      description: "Attempting to reload the payment system...",
+    });
+    window.location.reload();
+  };
+
+  // Show detailed error message if script failed to load
   if (scriptError) {
     return (
-      <div className="mt-4 w-full text-center">
-        <p className="text-sm text-red-500 mb-2">
-          Unable to load payment system. Please try again later.
+      <div className="mt-4 w-full text-center space-y-4">
+        <div className="flex items-center justify-center text-red-500 gap-2">
+          <AlertCircle className="h-5 w-5" />
+          <p className="text-sm font-medium">
+            Unable to load payment system
+          </p>
+        </div>
+        <p className="text-xs text-muted-foreground mb-2">
+          We're experiencing technical difficulties connecting to our payment provider.
         </p>
         <Button 
-          onClick={() => window.location.reload()} 
+          onClick={handleRetry} 
           variant="outline" 
           className="w-full"
         >
           <RefreshCw className="mr-2 h-4 w-4" />
-          Refresh Page
+          Try Again
         </Button>
       </div>
     );
@@ -45,21 +59,29 @@ const PayPalSubscribeButton = ({ onSuccess, onError, planPrice }: PayPalSubscrib
   return (
     <div className="mt-4 w-full">
       {loading ? (
-        <Button disabled className="w-full">
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          Loading PayPal... ({paypalMode === 'live' ? 'Production' : 'Sandbox'})
-        </Button>
+        <div className="space-y-2">
+          <Button disabled className="w-full">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Loading PayPal...
+          </Button>
+          <p className="text-xs text-center text-muted-foreground">
+            {paypalMode === 'live' ? 'Using PayPal Live Production Mode' : 'Using PayPal Sandbox Mode'}
+          </p>
+        </div>
       ) : (
         <>
           {sdkReady && (
             <div className="text-xs text-right mb-1 text-muted-foreground">
-              {paypalMode === 'live' ? 'Live PayPal' : 'Sandbox Mode'}
+              {paypalMode === 'live' ? 'PayPal Live Production Mode' : 'PayPal Sandbox Mode'}
             </div>
           )}
           <PayPalButtonRenderer 
             sdkReady={sdkReady} 
             onSuccess={onSuccess} 
-            onError={onError} 
+            onError={(err) => {
+              console.error('PayPal error in button renderer:', err);
+              if (onError) onError(err);
+            }} 
             planPrice={planPrice} 
           />
         </>

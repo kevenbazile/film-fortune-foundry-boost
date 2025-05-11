@@ -23,56 +23,28 @@ export const usePayPalSDK = () => {
           return;
         }
 
-        // First try loading directly
+        console.log('Starting PayPal SDK initialization process...');
+        
+        // Try direct loading first with clear error handling
         try {
-          console.log('Loading PayPal SDK directly in LIVE mode...');
-          await loadPayPalScript();
-          console.log('PayPal SDK loaded successfully via direct method');
+          console.log('Attempting direct PayPal SDK loading in LIVE mode...');
+          await loadPayPalScriptDirectly();
           setSdkReady(true);
+          console.log('PayPal SDK loaded successfully via direct method');
+          setLoading(false);
+          return;
         } catch (directError) {
-          console.error('Direct load failed:', directError);
+          console.error('Direct PayPal loading failed with error:', directError);
           
-          // Fallback to loading via edge function
+          // Fallback to edge function with improved error handling
           try {
             console.log('Attempting to load PayPal SDK via edge function...');
-            // Get script URL from our edge function
-            const { data, error } = await supabase.functions.invoke('get-paypal-script');
-            
-            if (error) {
-              throw new Error(`Error fetching PayPal script URL: ${error.message}`);
-            }
-            
-            // Update mode if returned from edge function
-            if (data.mode) {
-              setPaypalMode(data.mode);
-              console.log(`PayPal mode set to: ${data.mode}`);
-            }
-            
-            // Create script element
-            const script = document.createElement('script');
-            script.type = 'text/javascript';
-            script.src = data.scriptUrl;
-            script.async = true;
-            
-            // Promise to wait for script load
-            await new Promise<void>((resolve, reject) => {
-              script.onload = () => {
-                console.log('PayPal SDK loaded successfully via edge function');
-                resolve();
-              };
-              
-              script.onerror = (err) => {
-                console.error('Error loading PayPal script via edge function:', err);
-                reject(new Error('Failed to load PayPal SDK via edge function'));
-              };
-              
-              document.body.appendChild(script);
-            });
-            
+            await loadPayPalScriptViaEdgeFunction();
             setSdkReady(true);
+            console.log('PayPal SDK loaded successfully via edge function');
           } catch (fallbackError) {
-            console.error('All PayPal SDK loading methods failed:', fallbackError);
-            setScriptError(fallbackError as Error);
+            console.error('Edge function PayPal loading failed with error:', fallbackError);
+            setScriptError(new Error('Failed to load PayPal SDK. Please try again later.'));
             throw fallbackError;
           }
         }
@@ -87,31 +59,85 @@ export const usePayPalSDK = () => {
     initializePayPal();
   }, []);
 
-  // Function to load PayPal SDK directly
-  const loadPayPalScript = () => {
+  // Function to load PayPal SDK directly with improved error handling
+  const loadPayPalScriptDirectly = (): Promise<void> => {
     return new Promise<void>((resolve, reject) => {
-      // Check if PayPal SDK is already loaded
-      if (window.paypal) {
-        resolve();
-        return;
-      }
+      try {
+        // Check if PayPal SDK is already loaded
+        if (window.paypal) {
+          resolve();
+          return;
+        }
 
-      const script = document.createElement('script');
-      script.type = 'text/javascript';
-      script.src = getPayPalScriptUrl();
-      script.async = true;
-      
-      script.onload = () => {
-        console.log('PayPal SDK loaded successfully via direct method (LIVE mode)');
-        resolve();
-      };
-      
-      script.onerror = (err) => {
-        console.error('Error loading PayPal script directly:', err);
-        reject(new Error('Failed to load PayPal SDK directly'));
-      };
-      
-      document.body.appendChild(script);
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = getPayPalScriptUrl();
+        script.async = true;
+        
+        script.onload = () => {
+          console.log('PayPal SDK loaded successfully via direct method (LIVE mode)');
+          resolve();
+        };
+        
+        script.onerror = (err) => {
+          console.error('Error loading PayPal script directly:', err);
+          document.body.removeChild(script);
+          reject(new Error('Failed to load PayPal SDK directly'));
+        };
+        
+        document.body.appendChild(script);
+      } catch (error) {
+        console.error('Exception during direct PayPal script loading:', error);
+        reject(error);
+      }
+    });
+  };
+
+  // Function to load PayPal SDK via edge function with improved error handling
+  const loadPayPalScriptViaEdgeFunction = (): Promise<void> => {
+    return new Promise<void>(async (resolve, reject) => {
+      try {
+        // Call our edge function to get the script URL
+        const { data, error } = await supabase.functions.invoke('get-paypal-script');
+        
+        if (error) {
+          console.error('Error from get-paypal-script edge function:', error);
+          throw new Error(`Edge function error: ${error.message}`);
+        }
+        
+        if (!data || !data.scriptUrl) {
+          throw new Error('Edge function returned invalid data');
+        }
+        
+        // Update mode if returned from edge function
+        if (data.mode) {
+          setPaypalMode(data.mode);
+          console.log(`PayPal mode set from edge function: ${data.mode}`);
+        }
+        
+        // Create script element with the URL from edge function
+        const script = document.createElement('script');
+        script.type = 'text/javascript';
+        script.src = data.scriptUrl;
+        script.async = true;
+        
+        // Promise to wait for script load
+        script.onload = () => {
+          console.log('PayPal SDK loaded successfully via edge function');
+          resolve();
+        };
+        
+        script.onerror = (err) => {
+          console.error('Error loading PayPal script via edge function:', err);
+          document.body.removeChild(script);
+          reject(new Error('Failed to load PayPal SDK via edge function'));
+        };
+        
+        document.body.appendChild(script);
+      } catch (error) {
+        console.error('Exception during PayPal script loading via edge function:', error);
+        reject(error);
+      }
     });
   };
 

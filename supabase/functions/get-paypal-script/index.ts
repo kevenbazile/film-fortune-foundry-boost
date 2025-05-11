@@ -11,7 +11,13 @@ serve(async (req) => {
 
   try {
     const config = getPayPalConfig();
-    // Using production PayPal SDK URL
+    
+    // Ensure we have a valid client ID
+    if (!config.clientId) {
+      throw new Error('PayPal client ID is missing');
+    }
+    
+    // Build the script URL with proper parameters
     const scriptUrl = `https://www.paypal.com/sdk/js?client-id=${config.clientId}&currency=USD&intent=subscription`;
     
     console.log('Providing PayPal script URL for mode:', config.mode);
@@ -30,7 +36,10 @@ serve(async (req) => {
     console.error('Error getting PayPal script URL:', error);
     
     return new Response(
-      JSON.stringify({ error: error.message || 'Failed to get PayPal script URL' }),
+      JSON.stringify({ 
+        error: error.message || 'Failed to get PayPal script URL',
+        errorDetails: error.toString()
+      }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 500,

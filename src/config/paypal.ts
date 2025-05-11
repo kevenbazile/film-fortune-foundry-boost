@@ -9,7 +9,7 @@ export const PAYPAL_CONFIG = {
   // Set to 'live' for production
   MODE: 'live',
   
-  // Live production credentials
+  // Live production credentials - using the exact provided values
   CLIENT_ID: 'AWLqCibRJ6ZC89ARQ8HFCoL9z57Lg0qvbY2HtLKrJwmqjM8C3XRlR2h9b0_g5m3Wb8TRGjP30Kj_td75',
   
   // DO NOT expose client secret in browser code - only use in edge functions

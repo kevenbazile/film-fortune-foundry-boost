@@ -13,11 +13,15 @@ export function getPayPalConfig() {
   // API endpoints based on mode - now defaulting to production
   const apiUrl = 'https://api-m.paypal.com';
   
+  // Use the exact credentials that were provided
+  const clientId = Deno.env.get('PAYPAL_CLIENT_ID') || 'AWLqCibRJ6ZC89ARQ8HFCoL9z57Lg0qvbY2HtLKrJwmqjM8C3XRlR2h9b0_g5m3Wb8TRGjP30Kj_td75';
+  const secret = Deno.env.get('PAYPAL_SECRET') || 'EJeSkREnt3W8iCuLAG2ihBJqfjqThj5YjrCknRt_7TmS0SrppC8cP7_bahYUVt0h0whnwxIaeWDjHG8-';
+  
   return {
     mode,
     apiUrl,
-    clientId: Deno.env.get('PAYPAL_CLIENT_ID') || 'AWLqCibRJ6ZC89ARQ8HFCoL9z57Lg0qvbY2HtLKrJwmqjM8C3XRlR2h9b0_g5m3Wb8TRGjP30Kj_td75',
-    secret: Deno.env.get('PAYPAL_SECRET') || 'EJeSkREnt3W8iCuLAG2ihBJqfjqThj5YjrCknRt_7TmS0SrppC8cP7_bahYUVt0h0whnwxIaeWDjHG8-'
+    clientId,
+    secret
   };
 }
 
@@ -25,23 +29,28 @@ export function getPayPalConfig() {
 export async function createAccessToken() {
   const config = getPayPalConfig();
   
-  const response = await fetch(`${config.apiUrl}/v1/oauth2/token`, {
-    method: 'POST',
-    headers: {
-      'Accept': 'application/json',
-      'Accept-Language': 'en_US',
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': `Basic ${btoa(`${config.clientId}:${config.secret}`)}`
-    },
-    body: 'grant_type=client_credentials'
-  });
-  
-  if (!response.ok) {
-    const errorData = await response.json();
-    console.error('PayPal auth error:', errorData);
-    throw new Error(`PayPal authentication failed: ${errorData.error_description || 'Unknown error'}`);
+  try {
+    const response = await fetch(`${config.apiUrl}/v1/oauth2/token`, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Accept-Language': 'en_US',
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Basic ${btoa(`${config.clientId}:${config.secret}`)}`
+      },
+      body: 'grant_type=client_credentials'
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('PayPal auth error:', errorData);
+      throw new Error(`PayPal authentication failed: ${errorData.error_description || 'Unknown error'}`);
+    }
+    
+    const data = await response.json();
+    return data.access_token;
+  } catch (error) {
+    console.error('Error creating PayPal access token:', error);
+    throw error;
   }
-  
-  const data = await response.json();
-  return data.access_token;
 }
