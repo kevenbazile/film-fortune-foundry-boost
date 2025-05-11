@@ -1,36 +1,135 @@
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, X, AlertCircle } from "lucide-react";
+import { Check, X, AlertCircle, Calendar, Loader2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useForm } from "react-hook-form";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
 const DistributionManagement = () => {
-  const activeDistributions = [
-    { id: "D-001", film: "The Last Journey", filmmaker: "Maria Rodriguez", platforms: "Netflix, Amazon, Hulu", startDate: "2023-11-15", endDate: "2024-11-15", status: "active" },
-    { id: "D-002", film: "Neon Dreams", filmmaker: "James Wilson", platforms: "Netflix, Disney+", startDate: "2023-12-01", endDate: "2024-12-01", status: "active" },
-    { id: "D-003", film: "The Silent Voice", filmmaker: "Emma Chen", platforms: "Amazon, Apple TV+", startDate: "2024-01-10", endDate: "2025-01-10", status: "active" },
-    { id: "D-004", film: "Beyond Tomorrow", filmmaker: "David Patel", platforms: "Netflix, Hulu", startDate: "2024-01-25", endDate: "2025-01-25", status: "active" },
-    { id: "D-005", film: "Forgotten Shores", filmmaker: "Michael Thompson", platforms: "Amazon, Disney+", startDate: "2024-02-05", endDate: "2025-02-05", status: "active" },
-  ];
+  const [activeDistributions, setActiveDistributions] = useState([]);
+  const [pendingDistributions, setPendingDistributions] = useState([]);
+  const [platformIssues, setPlatformIssues] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const pendingDistributions = [
-    { id: "D-006", film: "City Lights", filmmaker: "Sarah Johnson", platforms: "Netflix, Amazon, Hulu, HBO Max", status: "encoding", estimatedCompletion: "2024-03-10" },
-    { id: "D-007", film: "Midnight Run", filmmaker: "Carlos Garcia", platforms: "Netflix, Disney+, Apple TV+", status: "metadata", estimatedCompletion: "2024-03-15" },
-    { id: "D-008", film: "The Mountain", filmmaker: "Lisa Wong", platforms: "Amazon, Hulu, Paramount+", status: "submission", estimatedCompletion: "2024-03-20" },
-  ];
+  useEffect(() => {
+    fetchDistributions();
+    setupRealtimeSubscription();
+  }, []);
 
-  const platformIssues = [
-    { platform: "Netflix", issue: "Metadata format changes", affectedFilms: 3, status: "investigating", reportedDate: "2024-02-28" },
-    { platform: "Amazon Prime", issue: "Encoding specification update", affectedFilms: 5, status: "resolved", reportedDate: "2024-02-25" },
-    { platform: "Hulu", issue: "API connection failure", affectedFilms: 2, status: "in progress", reportedDate: "2024-02-27" },
-  ];
+  const setupRealtimeSubscription = () => {
+    const channel = supabase
+      .channel('distribution-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'distributions'
+        },
+        () => {
+          fetchDistributions();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
+
+  const fetchDistributions = async () => {
+    setLoading(true);
+    try {
+      // Fetch active distributions
+      const { data: activeData, error: activeError } = await supabase
+        .from('distributions')
+        .select(`
+          id,
+          film_id,
+          platform,
+          platform_url,
+          status,
+          submitted_at,
+          completed_at,
+          films (title, director)
+        `)
+        .in('status', ['live', 'completed'])
+        .order('submitted_at', { ascending: false });
+
+      if (activeError) throw activeError;
+      setActiveDistributions(activeData || []);
+
+      // Fetch pending distributions
+      const { data: pendingData, error: pendingError } = await supabase
+        .from('distributions')
+        .select(`
+          id,
+          film_id,
+          platform,
+          status,
+          submitted_at,
+          films (title, director)
+        `)
+        .in('status', ['encoding', 'metadata', 'submission'])
+        .order('submitted_at', { ascending: false });
+
+      if (pendingError) throw pendingError;
+      setPendingDistributions(pendingData || []);
+
+      // For now, we'll keep platform issues static as they might be managed differently
+      // In a real implementation, this would also come from the database
+    } catch (error) {
+      console.error('Error fetching distributions:', error);
+      toast({
+        variant: "destructive",
+        title: "Failed to load distribution data",
+        description: "Please try again or contact support if the problem persists.",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateDistributionStatus = async (id, newStatus) => {
+    try {
+      const { error } = await supabase
+        .from('distributions')
+        .update({ 
+          status: newStatus,
+          updated_at: new Date().toISOString(),
+          ...(newStatus === 'completed' ? { completed_at: new Date().toISOString() } : {})
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Distribution updated",
+        description: `Status changed to ${newStatus}.`,
+      });
+
+      fetchDistributions();
+    } catch (error) {
+      console.error('Error updating distribution:', error);
+      toast({
+        variant: "destructive",
+        title: "Update failed",
+        description: "Could not update distribution status.",
+      });
+    }
+  };
 
   const getStatusBadge = (status) => {
     switch (status) {
       case "active":
+      case "live":
+      case "completed":
         return <Badge className="bg-green-500">{status}</Badge>;
       case "encoding":
         return <Badge className="bg-yellow-500">{status}</Badge>;
@@ -48,6 +147,33 @@ const DistributionManagement = () => {
         return <Badge variant="outline">{status}</Badge>;
     }
   };
+
+  const issueForm = useForm({
+    defaultValues: {
+      platform: "",
+      severity: "",
+      description: "",
+      affectedFilms: ""
+    }
+  });
+
+  const onSubmitIssue = async (data) => {
+    toast({
+      title: "Issue reported",
+      description: "The platform issue has been reported to the team.",
+    });
+    
+    issueForm.reset();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-2">Loading distribution data...</span>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -71,29 +197,49 @@ const DistributionManagement = () => {
                     <TableHead>Distribution ID</TableHead>
                     <TableHead>Film Title</TableHead>
                     <TableHead>Filmmaker</TableHead>
-                    <TableHead>Platforms</TableHead>
+                    <TableHead>Platform</TableHead>
                     <TableHead>Start Date</TableHead>
-                    <TableHead>End Date</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {activeDistributions.map((dist) => (
-                    <TableRow key={dist.id}>
-                      <TableCell className="font-mono">{dist.id}</TableCell>
-                      <TableCell className="font-medium">{dist.film}</TableCell>
-                      <TableCell>{dist.filmmaker}</TableCell>
-                      <TableCell>{dist.platforms}</TableCell>
-                      <TableCell>{dist.startDate}</TableCell>
-                      <TableCell>{dist.endDate}</TableCell>
-                      <TableCell>{getStatusBadge(dist.status)}</TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button size="sm" variant="outline">Edit</Button>
-                        <Button size="sm" variant="outline">Performance</Button>
+                  {activeDistributions.length > 0 ? (
+                    activeDistributions.map((dist) => (
+                      <TableRow key={dist.id}>
+                        <TableCell className="font-mono">{dist.id.substring(0, 8)}</TableCell>
+                        <TableCell className="font-medium">{dist.films?.title || "Unknown Film"}</TableCell>
+                        <TableCell>{dist.films?.director || "Unknown"}</TableCell>
+                        <TableCell>{dist.platform}</TableCell>
+                        <TableCell>{new Date(dist.submitted_at).toLocaleDateString()}</TableCell>
+                        <TableCell>{getStatusBadge(dist.status)}</TableCell>
+                        <TableCell className="text-right space-x-2">
+                          <Button size="sm" variant="outline">Edit</Button>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => {
+                              if (dist.platform_url) {
+                                window.open(dist.platform_url, '_blank');
+                              } else {
+                                toast({
+                                  description: "No platform URL available for this distribution."
+                                });
+                              }
+                            }}
+                          >
+                            View
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={7} className="text-center py-4 text-muted-foreground">
+                        No active distributions found
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -113,27 +259,55 @@ const DistributionManagement = () => {
                     <TableHead>Distribution ID</TableHead>
                     <TableHead>Film Title</TableHead>
                     <TableHead>Filmmaker</TableHead>
-                    <TableHead>Target Platforms</TableHead>
+                    <TableHead>Platform</TableHead>
                     <TableHead>Current Stage</TableHead>
-                    <TableHead>Estimated Completion</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pendingDistributions.map((dist) => (
-                    <TableRow key={dist.id}>
-                      <TableCell className="font-mono">{dist.id}</TableCell>
-                      <TableCell className="font-medium">{dist.film}</TableCell>
-                      <TableCell>{dist.filmmaker}</TableCell>
-                      <TableCell>{dist.platforms}</TableCell>
-                      <TableCell>{getStatusBadge(dist.status)}</TableCell>
-                      <TableCell>{dist.estimatedCompletion}</TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button size="sm" variant="outline">View Details</Button>
-                        <Button size="sm">Advance Stage</Button>
+                  {pendingDistributions.length > 0 ? (
+                    pendingDistributions.map((dist) => (
+                      <TableRow key={dist.id}>
+                        <TableCell className="font-mono">{dist.id.substring(0, 8)}</TableCell>
+                        <TableCell className="font-medium">{dist.films?.title || "Unknown Film"}</TableCell>
+                        <TableCell>{dist.films?.director || "Unknown"}</TableCell>
+                        <TableCell>{dist.platform}</TableCell>
+                        <TableCell>{getStatusBadge(dist.status)}</TableCell>
+                        <TableCell className="text-right space-x-2">
+                          <Button size="sm" variant="outline">Details</Button>
+                          <Button 
+                            size="sm"
+                            onClick={() => {
+                              // Advance to next stage
+                              let nextStatus;
+                              switch (dist.status) {
+                                case 'encoding':
+                                  nextStatus = 'metadata';
+                                  break;
+                                case 'metadata':
+                                  nextStatus = 'submission';
+                                  break;
+                                case 'submission':
+                                  nextStatus = 'live';
+                                  break;
+                                default:
+                                  nextStatus = 'encoding';
+                              }
+                              updateDistributionStatus(dist.id, nextStatus);
+                            }}
+                          >
+                            Advance Stage
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+                        No pending distributions found
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -190,21 +364,29 @@ const DistributionManagement = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {platformIssues.map((issue, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="font-medium">{issue.platform}</TableCell>
-                      <TableCell>{issue.issue}</TableCell>
-                      <TableCell>{issue.affectedFilms}</TableCell>
-                      <TableCell>{getStatusBadge(issue.status)}</TableCell>
-                      <TableCell>{issue.reportedDate}</TableCell>
-                      <TableCell className="text-right space-x-2">
-                        <Button size="sm" variant="outline">Update Status</Button>
-                        <Button size="sm" variant={issue.status === 'resolved' ? 'outline' : 'default'}>
-                          {issue.status === 'resolved' ? 'Reopen' : 'Resolve'}
-                        </Button>
+                  {platformIssues.length > 0 ? (
+                    platformIssues.map((issue, index) => (
+                      <TableRow key={index}>
+                        <TableCell className="font-medium">{issue.platform}</TableCell>
+                        <TableCell>{issue.issue}</TableCell>
+                        <TableCell>{issue.affectedFilms}</TableCell>
+                        <TableCell>{getStatusBadge(issue.status)}</TableCell>
+                        <TableCell>{issue.reportedDate}</TableCell>
+                        <TableCell className="text-right space-x-2">
+                          <Button size="sm" variant="outline">Update Status</Button>
+                          <Button size="sm" variant={issue.status === 'resolved' ? 'outline' : 'default'}>
+                            {issue.status === 'resolved' ? 'Reopen' : 'Resolve'}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  ) : (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-4 text-muted-foreground">
+                        No platform issues reported
                       </TableCell>
                     </TableRow>
-                  ))}
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -216,50 +398,97 @@ const DistributionManagement = () => {
               <CardDescription>Report a new issue affecting film distribution</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label htmlFor="platform" className="text-sm font-medium">Platform</label>
-                    <select id="platform" className="w-full border rounded-md p-2">
-                      <option value="">Select Platform</option>
-                      <option value="netflix">Netflix</option>
-                      <option value="amazon">Amazon Prime</option>
-                      <option value="hulu">Hulu</option>
-                      <option value="disney">Disney+</option>
-                      <option value="apple">Apple TV+</option>
-                      <option value="hbo">HBO Max</option>
-                      <option value="paramount">Paramount+</option>
-                    </select>
+              <Form {...issueForm}>
+                <form onSubmit={issueForm.handleSubmit(onSubmitIssue)} className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={issueForm.control}
+                      name="platform"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Platform</FormLabel>
+                          <FormControl>
+                            <select {...field} className="w-full border rounded-md p-2">
+                              <option value="">Select Platform</option>
+                              <option value="netflix">Netflix</option>
+                              <option value="amazon">Amazon Prime</option>
+                              <option value="hulu">Hulu</option>
+                              <option value="disney">Disney+</option>
+                              <option value="apple">Apple TV+</option>
+                              <option value="hbo">HBO Max</option>
+                              <option value="paramount">Paramount+</option>
+                            </select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={issueForm.control}
+                      name="severity"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Severity</FormLabel>
+                          <FormControl>
+                            <select {...field} className="w-full border rounded-md p-2">
+                              <option value="">Select Severity</option>
+                              <option value="low">Low - Minor Impact</option>
+                              <option value="medium">Medium - Partial Impact</option>
+                              <option value="high">High - Major Impact</option>
+                              <option value="critical">Critical - Complete Failure</option>
+                            </select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                  <div className="space-y-2">
-                    <label htmlFor="severity" className="text-sm font-medium">Severity</label>
-                    <select id="severity" className="w-full border rounded-md p-2">
-                      <option value="">Select Severity</option>
-                      <option value="low">Low - Minor Impact</option>
-                      <option value="medium">Medium - Partial Impact</option>
-                      <option value="high">High - Major Impact</option>
-                      <option value="critical">Critical - Complete Failure</option>
-                    </select>
+                  
+                  <FormField
+                    control={issueForm.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Issue Description</FormLabel>
+                        <FormControl>
+                          <textarea 
+                            {...field} 
+                            className="w-full h-24 border rounded-md p-2" 
+                            placeholder="Describe the issue in detail..."
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={issueForm.control}
+                    name="affectedFilms"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Affected Films</FormLabel>
+                        <FormControl>
+                          <textarea 
+                            {...field} 
+                            className="w-full h-16 border rounded-md p-2" 
+                            placeholder="List the film IDs affected by this issue..."
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <div className="flex justify-end">
+                    <Button type="submit" className="space-x-2">
+                      <AlertCircle className="w-4 h-4" />
+                      <span>Submit Issue Report</span>
+                    </Button>
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="issue-description" className="text-sm font-medium">Issue Description</label>
-                  <textarea id="issue-description" className="w-full h-24 border rounded-md p-2" placeholder="Describe the issue in detail..."></textarea>
-                </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="affected-films" className="text-sm font-medium">Affected Films</label>
-                  <textarea id="affected-films" className="w-full h-16 border rounded-md p-2" placeholder="List the film IDs affected by this issue..."></textarea>
-                </div>
-                
-                <div className="flex justify-end">
-                  <Button className="space-x-2">
-                    <AlertCircle className="w-4 h-4" />
-                    <span>Submit Issue Report</span>
-                  </Button>
-                </div>
-              </div>
+                </form>
+              </Form>
             </CardContent>
           </Card>
         </TabsContent>
