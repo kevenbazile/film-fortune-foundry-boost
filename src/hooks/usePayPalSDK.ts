@@ -22,13 +22,13 @@ export const usePayPalSDK = () => {
           return;
         }
 
-        console.log('Starting direct PayPal SDK initialization process...');
+        console.log('Starting PayPal SDK initialization for hosted buttons...');
         
         // Remove any existing PayPal scripts to avoid conflicts
         const existingScripts = document.querySelectorAll('script[src*="paypal.com/sdk"]');
         existingScripts.forEach(script => script.remove());
         
-        // Create new script element with direct URL
+        // Create new script element with direct URL for hosted buttons
         const script = document.createElement('script');
         script.type = 'text/javascript';
         script.src = getPayPalScriptUrl();
@@ -36,13 +36,13 @@ export const usePayPalSDK = () => {
         script.crossOrigin = 'anonymous';
         
         script.onload = () => {
-          console.log('PayPal SDK loaded successfully via direct method');
+          console.log('PayPal SDK for hosted buttons loaded successfully');
           setSdkReady(true);
           setLoading(false);
         };
         
         script.onerror = (err) => {
-          console.error('Error loading PayPal script directly:', err);
+          console.error('Error loading PayPal script for hosted buttons:', err);
           setScriptError(new Error('Failed to load PayPal SDK. Please try again later.'));
           setLoading(false);
         };

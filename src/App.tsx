@@ -17,6 +17,7 @@ import Footer from "./components/Footer";
 import { AuthProvider } from "./context/AuthContext";
 import { useEffect } from "react";
 import { ensureStorageBuckets } from "./integrations/supabase/storage";
+import PayPalSuccessHandler from "./components/PayPalSuccessHandler";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +36,7 @@ const AppContent = () => {
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
+      <PayPalSuccessHandler />
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Index />} />

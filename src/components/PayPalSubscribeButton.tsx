@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePayPalSDK } from "@/hooks/usePayPalSDK";
-import PayPalButtonRenderer from "@/components/PayPalButtonRenderer";
 import { PAYPAL_CONFIG } from "@/config/paypal";
+import PayPalHostedButton from "@/components/PayPalHostedButton";
 
 // This is declared as a global interface to work with the PayPal SDK
 declare global {
@@ -18,9 +18,15 @@ interface PayPalSubscribeButtonProps {
   onSuccess?: (subscriptionId: string) => void;
   onError?: (error: any) => void;
   planPrice?: string;
+  plan?: 'BASIC' | 'PREMIUM' | 'ELITE';
 }
 
-const PayPalSubscribeButton = ({ onSuccess, onError, planPrice }: PayPalSubscribeButtonProps) => {
+const PayPalSubscribeButton = ({ 
+  onSuccess, 
+  onError, 
+  planPrice, 
+  plan = 'BASIC' // Default to basic plan
+}: PayPalSubscribeButtonProps) => {
   const { loading, sdkReady, scriptError, paypalMode } = usePayPalSDK();
   const { toast } = useToast();
 
@@ -30,6 +36,11 @@ const PayPalSubscribeButton = ({ onSuccess, onError, planPrice }: PayPalSubscrib
       description: "Attempting to reload the payment system...",
     });
     window.location.reload();
+  };
+
+  const handlePaymentError = (error: any) => {
+    console.error('PayPal error:', error);
+    if (onError) onError(error);
   };
 
   // Show detailed error message if script failed to load
@@ -77,15 +88,17 @@ const PayPalSubscribeButton = ({ onSuccess, onError, planPrice }: PayPalSubscrib
               {PAYPAL_CONFIG.MODE === 'live' ? 'PayPal Live Production Mode' : 'PayPal Sandbox Mode'}
             </div>
           )}
-          <PayPalButtonRenderer 
-            sdkReady={sdkReady} 
-            onSuccess={onSuccess} 
-            onError={(err) => {
-              console.error('PayPal error in button renderer:', err);
-              if (onError) onError(err);
-            }} 
-            planPrice={planPrice} 
-          />
+          {sdkReady ? (
+            <PayPalHostedButton 
+              plan={plan} 
+              onError={handlePaymentError} 
+              className="w-full"
+            />
+          ) : (
+            <div className="text-center p-4 bg-gray-50 rounded-md">
+              <p className="text-sm text-gray-600">Loading payment options...</p>
+            </div>
+          )}
         </>
       )}
     </div>
