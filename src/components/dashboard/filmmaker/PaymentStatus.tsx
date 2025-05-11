@@ -14,8 +14,18 @@ const PaymentStatus = () => {
     platform: "all",
     location: "all"
   });
+  
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  const [sortColumn, setSortColumn] = useState('paymentDate');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
-  const { paymentData, summary, isLoading, isError, error, refetch } = usePaymentData();
+  const { paymentData, totalCount, summary, isLoading, isError, error, refetch } = usePaymentData(
+    currentPage,
+    pageSize,
+    sortColumn,
+    sortDirection
+  );
   
   // Filter payment data based on selected filters
   const filteredPaymentData = paymentData.filter(payment => {
@@ -33,6 +43,16 @@ const PaymentStatus = () => {
 
   const handleFilterChange = (newFilters: any) => {
     setFilters(newFilters);
+    setCurrentPage(0); // Reset to first page when filters change
+  };
+  
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+  
+  const handleSortChange = (column: string, direction: 'asc' | 'desc') => {
+    setSortColumn(column);
+    setSortDirection(direction);
   };
 
   if (isError) {
@@ -60,7 +80,16 @@ const PaymentStatus = () => {
               <p className="text-muted-foreground">Loading payment data...</p>
             </div>
           ) : (
-            <PaymentTable paymentData={filteredPaymentData} />
+            <PaymentTable 
+              paymentData={filteredPaymentData}
+              totalCount={totalCount}
+              onPageChange={handlePageChange}
+              onSortChange={handleSortChange}
+              currentPage={currentPage}
+              pageSize={pageSize}
+              sortColumn={sortColumn}
+              sortDirection={sortDirection}
+            />
           )}
         </CardContent>
       </Card>

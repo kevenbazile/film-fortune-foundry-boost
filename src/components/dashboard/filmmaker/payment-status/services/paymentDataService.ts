@@ -1,18 +1,46 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { PaymentStatus } from "../../revenue/types";
 import { format } from "date-fns";
 
-export async function fetchPaymentData(userId: string | null): Promise<PaymentStatus[]> {
-  if (!userId) return [];
+export async function fetchPaymentData(
+  userId: string | null, 
+  page: number = 0, 
+  pageSize: number = 10,
+  sortColumn: string = 'paymentDate',
+  sortDirection: 'asc' | 'desc' = 'desc'
+): Promise<{ data: PaymentStatus[]; count: number }> {
+  if (!userId) return { data: [], count: 0 };
   
   try {
-    // Try to fetch from platform_earnings table
+    // Map frontend column names to database column names
+    const columnMap: Record<string, string> = {
+      'paymentDate': 'payment_date',
+      'amount': 'amount',
+      'status': 'status',
+      'platform': 'platform',
+      'views': 'views'
+    };
+    
+    const dbColumn = columnMap[sortColumn] || 'payment_date';
+    
+    // First get total count
+    const { count, error: countError } = await supabase
+      .from('platform_earnings')
+      .select('*', { count: 'exact', head: true })
+      .eq('films.user_id', userId);
+    
+    if (countError) {
+      console.error("Error fetching payment count:", countError);
+      throw countError;
+    }
+    
+    // Then get paginated data
     const { data: earningsData, error: earningsError } = await supabase
       .from('platform_earnings')
       .select('id, film_id, platform, amount, payment_date, status, payment_method, transaction_id, views, films!inner(title)')
       .eq('films.user_id', userId)
-      .order('payment_date', { ascending: false });
+      .order(dbColumn, { ascending: sortDirection === 'asc' })
+      .range(page * pageSize, (page + 1) * pageSize - 1);
     
     if (earningsError) {
       console.error("Error fetching payment data:", earningsError);
@@ -20,7 +48,7 @@ export async function fetchPaymentData(userId: string | null): Promise<PaymentSt
     }
     
     // Transform the data to match our PaymentStatus type
-    return earningsData.map(earning => ({
+    const transformedData = earningsData.map(earning => ({
       id: earning.id,
       filmTitle: earning.films?.title || 'Unknown Film',
       platform: earning.platform,
@@ -33,9 +61,14 @@ export async function fetchPaymentData(userId: string | null): Promise<PaymentSt
       views: earning.views || 0
     }));
     
+    return {
+      data: transformedData,
+      count: count || 0
+    };
+    
   } catch (error) {
     console.error("Error fetching payment data:", error);
-    return []; // Return empty array in case of error
+    return { data: [], count: 0 }; // Return empty array in case of error
   }
 }
 
