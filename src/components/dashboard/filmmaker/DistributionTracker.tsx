@@ -9,6 +9,7 @@ import { Check, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { useDistributionData } from "./distribution/useDistributionData";
+import { getDistributionStatusBadge } from "./distribution/utils";
 
 const DistributionTracker = () => {
   const { 
