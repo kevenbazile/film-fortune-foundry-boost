@@ -244,7 +244,8 @@ export function useCommissionData() {
           payment.date,
           payment.platform,
           payment.payerInfo.name,
-          payment.amount,
+          // Fix: Convert the number to string
+          payment.amount.toString(),
           payment.status
         ];
         csvRows.push(row);
@@ -315,3 +316,4 @@ export function useCommissionData() {
     refreshData
   };
 }
+
