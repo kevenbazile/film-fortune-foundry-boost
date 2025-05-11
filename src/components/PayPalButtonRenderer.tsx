@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { renderPayPalButtons, createPayPalSubscription, activatePayPalSubscription } from "@/utils/paypal-utils";
 
@@ -18,14 +18,27 @@ const PayPalButtonRenderer = ({
 }: PayPalButtonRendererProps) => {
   const { toast } = useToast();
   const containerId = 'paypal-button-container';
+  const renderAttemptedRef = useRef(false);
 
   useEffect(() => {
-    if (!sdkReady || !window.paypal) return;
+    if (!sdkReady || !window.paypal) {
+      console.log('PayPal SDK not ready or not loaded yet');
+      return;
+    }
+    
+    if (renderAttemptedRef.current) {
+      console.log('Render already attempted, skipping');
+      return;
+    }
+
+    renderAttemptedRef.current = true;
+    console.log('Rendering PayPal buttons now that SDK is ready');
     
     try {
       // Define handlers for PayPal button actions
       const handleCreateSubscription = async (data: any, actions: any) => {
         try {
+          console.log('Creating subscription with price:', planPrice);
           return await createPayPalSubscription(planPrice);
         } catch (error) {
           console.error('Error creating subscription:', error);
@@ -81,6 +94,18 @@ const PayPalButtonRenderer = ({
         });
       };
 
+      // Make sure container exists before rendering buttons
+      const containerElement = document.getElementById(containerId);
+      if (!containerElement) {
+        console.error('PayPal button container not found');
+        return;
+      }
+
+      console.log('Container found, rendering PayPal buttons');
+      
+      // Clear any existing buttons
+      containerElement.innerHTML = '';
+
       // Render the PayPal buttons
       renderPayPalButtons(
         containerId, 
@@ -91,10 +116,20 @@ const PayPalButtonRenderer = ({
       );
     } catch (error) {
       console.error('Error setting up PayPal buttons:', error);
+      if (onError) onError(error);
     }
   }, [sdkReady, toast, onSuccess, onError, planPrice]);
 
-  return <div id={containerId} className="w-full" />;
+  return (
+    <div>
+      <div id={containerId} className="w-full" />
+      {!sdkReady && (
+        <div className="text-sm text-center text-muted-foreground mt-2">
+          Loading payment system...
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default PayPalButtonRenderer;
