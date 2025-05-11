@@ -92,7 +92,9 @@ const InvestmentForm = () => {
           continue;
         }
         
-        const fileUrl = `${supabase.storageUrl}/object/public/investment-documents/${fileName}`;
+        // Construct file URL
+        const baseUrl = "https://ntksaithgzkejypqeccx.supabase.co/storage/v1/object/public";
+        const fileUrl = `${baseUrl}/investment-documents/${fileName}`;
         
         uploadedFiles.push({
           name: file.name,
@@ -152,12 +154,40 @@ const InvestmentForm = () => {
         submission_date: new Date().toISOString()
       };
       
-      // Submit to database
-      const { error } = await supabase
-        .from('community_fund_applications')
-        .insert(applicationData);
+      // Submit directly via SQL - TypeScript doesn't know about the new table yet
+      const { error } = await supabase.rpc('submit_investment_application', {
+        application_data: applicationData
+      });
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error submitting via RPC:", error);
+        
+        // Fallback to direct SQL query
+        const { error: directError } = await supabase.rpc('insert_community_fund_application', {
+          user_id_input: userId,
+          project_type_input: data.projectType,
+          project_title_input: data.projectTitle,
+          description_input: data.description,
+          requested_amount_input: parseFloat(data.requestedAmount),
+          use_of_funds_input: data.useOfFunds,
+          expected_deliverables_input: data.expectedDeliverables || null,
+          timeline_input: data.timeline || null,
+          target_audience_input: data.targetAudience || null,
+          marketing_plan_input: data.marketingPlan || null,
+          revenue_projections_input: JSON.stringify({
+            year1: data.revenueProjections.year1 ? parseFloat(data.revenueProjections.year1) : 0,
+            year2: data.revenueProjections.year2 ? parseFloat(data.revenueProjections.year2) : 0,
+            year3: data.revenueProjections.year3 ? parseFloat(data.revenueProjections.year3) : 0
+          }),
+          team_info_input: data.teamInfo || null,
+          previous_work_input: data.previousWork || null,
+          additional_documents_input: JSON.stringify(uploadedDocuments),
+          status_input: 'submitted',
+          submission_date_input: new Date().toISOString()
+        });
+        
+        if (directError) throw directError;
+      }
       
       // Success message
       toast({

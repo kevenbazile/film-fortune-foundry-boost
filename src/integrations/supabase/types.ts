@@ -9,6 +9,98 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      community_fund_applications: {
+        Row: {
+          additional_documents: Json | null
+          created_at: string | null
+          description: string
+          expected_deliverables: string | null
+          film_id: string | null
+          funding_date: string | null
+          id: string
+          invoice_id: string | null
+          marketing_plan: string | null
+          previous_work: string | null
+          project_title: string
+          project_type: string | null
+          requested_amount: number
+          revenue_projections: Json | null
+          review_date: string | null
+          review_notes: string | null
+          reviewed_by: string | null
+          status: string | null
+          submission_date: string | null
+          target_audience: string | null
+          team_info: string | null
+          timeline: string | null
+          updated_at: string | null
+          use_of_funds: string
+          user_id: string
+        }
+        Insert: {
+          additional_documents?: Json | null
+          created_at?: string | null
+          description: string
+          expected_deliverables?: string | null
+          film_id?: string | null
+          funding_date?: string | null
+          id?: string
+          invoice_id?: string | null
+          marketing_plan?: string | null
+          previous_work?: string | null
+          project_title: string
+          project_type?: string | null
+          requested_amount: number
+          revenue_projections?: Json | null
+          review_date?: string | null
+          review_notes?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          submission_date?: string | null
+          target_audience?: string | null
+          team_info?: string | null
+          timeline?: string | null
+          updated_at?: string | null
+          use_of_funds: string
+          user_id: string
+        }
+        Update: {
+          additional_documents?: Json | null
+          created_at?: string | null
+          description?: string
+          expected_deliverables?: string | null
+          film_id?: string | null
+          funding_date?: string | null
+          id?: string
+          invoice_id?: string | null
+          marketing_plan?: string | null
+          previous_work?: string | null
+          project_title?: string
+          project_type?: string | null
+          requested_amount?: number
+          revenue_projections?: Json | null
+          review_date?: string | null
+          review_notes?: string | null
+          reviewed_by?: string | null
+          status?: string | null
+          submission_date?: string | null
+          target_audience?: string | null
+          team_info?: string | null
+          timeline?: string | null
+          updated_at?: string | null
+          use_of_funds?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "community_fund_applications_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       distributions: {
         Row: {
           completed_at: string | null
@@ -197,6 +289,50 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fund_payments: {
+        Row: {
+          amount: number
+          application_id: string
+          created_at: string | null
+          entered_by: string | null
+          id: string
+          payment_date: string
+          payment_method: string | null
+          status: string | null
+          transaction_id: string | null
+        }
+        Insert: {
+          amount: number
+          application_id: string
+          created_at?: string | null
+          entered_by?: string | null
+          id?: string
+          payment_date: string
+          payment_method?: string | null
+          status?: string | null
+          transaction_id?: string | null
+        }
+        Update: {
+          amount?: number
+          application_id?: string
+          created_at?: string | null
+          entered_by?: string | null
+          id?: string
+          payment_date?: string
+          payment_method?: string | null
+          status?: string | null
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fund_payments_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "community_fund_applications"
             referencedColumns: ["id"]
           },
         ]

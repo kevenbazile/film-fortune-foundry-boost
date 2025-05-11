@@ -53,15 +53,28 @@ const ApplicationStatus = () => {
         return;
       }
 
+      // Using a raw SQL query to get around the TypeScript issues
+      // because the table was just created and the types aren't updated yet
       const { data, error } = await supabase
-        .from("community_fund_applications")
-        .select("id, project_title, project_type, requested_amount, status, submission_date, review_date, funding_date, review_notes")
-        .eq("user_id", session.session.user.id)
-        .order("submission_date", { ascending: false });
+        .rpc('get_community_fund_applications', {
+          user_id_param: session.session.user.id
+        });
 
-      if (error) throw error;
-
-      setApplications(data || []);
+      if (error) {
+        console.error("Error fetching with RPC:", error);
+        
+        // Fallback to direct query
+        const { data: directData, error: directError } = await supabase
+          .from('community_fund_applications')
+          .select('*')
+          .eq('user_id', session.session.user.id)
+          .order('submission_date', { ascending: false });
+          
+        if (directError) throw directError;
+        setApplications(directData as Application[] || []);
+      } else {
+        setApplications(data as Application[] || []);
+      }
     } catch (error: any) {
       console.error("Error fetching applications:", error);
       toast({
@@ -109,12 +122,12 @@ const ApplicationStatus = () => {
                         {app.status.replace(/_/g, " ")}
                       </Badge>
                       <span className="text-sm text-muted-foreground">
-                        {app.project_type.charAt(0).toUpperCase() + app.project_type.slice(1)}
+                        {app.project_type?.charAt(0).toUpperCase() + app.project_type?.slice(1)}
                       </span>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium">${app.requested_amount.toLocaleString()}</p>
+                    <p className="font-medium">${app.requested_amount?.toLocaleString()}</p>
                     <p className="text-sm text-muted-foreground">
                       Submitted {formatDistanceToNow(new Date(app.submission_date), { addSuffix: true })}
                     </p>
