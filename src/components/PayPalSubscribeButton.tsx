@@ -15,9 +15,10 @@ declare global {
 interface PayPalSubscribeButtonProps {
   onSuccess?: (subscriptionId: string) => void;
   onError?: (error: any) => void;
+  planPrice?: string;
 }
 
-const PayPalSubscribeButton = ({ onSuccess, onError }: PayPalSubscribeButtonProps) => {
+const PayPalSubscribeButton = ({ onSuccess, onError, planPrice }: PayPalSubscribeButtonProps) => {
   const [loading, setLoading] = useState(false);
   const [sdkReady, setSdkReady] = useState(false);
   const { toast } = useToast();
@@ -53,10 +54,12 @@ const PayPalSubscribeButton = ({ onSuccess, onError }: PayPalSubscribeButtonProp
         script.src = data.scriptUrl;
         script.async = true;
         script.onload = () => {
+          console.log('PayPal SDK loaded successfully');
           setSdkReady(true);
           setLoading(false);
         };
-        script.onerror = () => {
+        script.onerror = (err) => {
+          console.error('Error loading PayPal script:', err);
           toast({
             variant: "destructive",
             title: "Error",
@@ -77,8 +80,18 @@ const PayPalSubscribeButton = ({ onSuccess, onError }: PayPalSubscribeButtonProp
   useEffect(() => {
     if (!sdkReady) return;
     
+    const containerElement = document.getElementById('paypal-button-container');
+    if (!containerElement) {
+      console.error('PayPal button container not found');
+      return;
+    }
+    
+    // Clear any existing buttons
+    containerElement.innerHTML = '';
+    
     // Render PayPal buttons once SDK is loaded
     try {
+      console.log('Rendering PayPal buttons');
       window.paypal.Buttons({
         style: {
           shape: 'rect',
@@ -87,18 +100,22 @@ const PayPalSubscribeButton = ({ onSuccess, onError }: PayPalSubscribeButtonProp
           label: 'subscribe'
         },
         createSubscription: async (data: any, actions: any) => {
+          console.log('Creating subscription', { planPrice });
           try {
             // Call our edge function to create a subscription
             const response = await supabase.functions.invoke('create-paypal-subscription', {
               body: {
-                userAction: 'SUBSCRIBE_NOW'
+                userAction: 'SUBSCRIBE_NOW',
+                planPrice: planPrice
               }
             });
             
             if (response.error) {
+              console.error('Error from create-paypal-subscription:', response.error);
               throw new Error(response.error.message || 'Failed to create subscription');
             }
             
+            console.log('Subscription created:', response.data);
             return response.data.subscriptionId;
           } catch (error) {
             console.error('Error creating subscription:', error);
@@ -163,7 +180,7 @@ const PayPalSubscribeButton = ({ onSuccess, onError }: PayPalSubscribeButtonProp
     } catch (error) {
       console.error('Error rendering PayPal buttons:', error);
     }
-  }, [sdkReady, toast, onSuccess, onError]);
+  }, [sdkReady, toast, onSuccess, onError, planPrice]);
 
   return (
     <div className="mt-4 w-full">

@@ -29,6 +29,9 @@ const ServicePackageCard = ({ package: pkg }: ServicePackageCardProps) => {
       ? pkg.features
       : Object.values(pkg.features || {});
 
+  // Extract just the number for display
+  const priceNumber = pkg.price.replace(/[^0-9.]/g, '');
+  
   return (
     <Card 
       className={`h-full flex flex-col ${pkg.highlighted ? 'ring-2 ring-primary relative' : ''}`}
@@ -42,6 +45,7 @@ const ServicePackageCard = ({ package: pkg }: ServicePackageCardProps) => {
         <h3 className="text-2xl font-bold">{pkg.title}</h3>
         <div className="mt-2">
           <span className="text-3xl font-bold">{pkg.price}</span>
+          <span className="text-sm font-normal text-muted-foreground">/month</span>
         </div>
       </CardHeader>
       <CardContent className="flex-grow space-y-6">
@@ -76,14 +80,6 @@ const ServicePackageCard = ({ package: pkg }: ServicePackageCardProps) => {
           </ul>
         </div>
       </CardContent>
-      <CardFooter className="pt-4">
-        <Button 
-          className="w-full" 
-          variant={pkg.highlighted ? "default" : "outline"}
-        >
-          Choose {pkg.title}
-        </Button>
-      </CardFooter>
     </Card>
   );
 };

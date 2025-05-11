@@ -5,6 +5,9 @@ import { Button } from "@/components/ui/button";
 import ServicePackageCard from "@/components/ServicePackageCard";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import PayPalSubscribeButton from "@/components/PayPalSubscribeButton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, Info } from "lucide-react";
 
 interface Service {
   id: string;
@@ -33,6 +36,8 @@ interface ServicePackage {
 const ServicePackages = () => {
   const [services, setServices] = useState<ServicePackage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchServices = async () => {
@@ -88,8 +93,57 @@ const ServicePackages = () => {
       }
     };
 
+    const checkSubscription = async () => {
+      try {
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session) {
+          return;
+        }
+        
+        const { data, error } = await supabase.functions.invoke('check-subscription-status');
+        
+        if (error) {
+          console.error('Error checking subscription:', error);
+        } else {
+          setSubscriptionStatus(data.status);
+        }
+      } catch (error) {
+        console.error('Error checking subscription status:', error);
+      }
+    };
+
     fetchServices();
+    checkSubscription();
   }, []);
+
+  const handleSelectPackage = (packageId: string) => {
+    setSelectedPackage(packageId);
+  };
+
+  const handleSubscriptionSuccess = (subscriptionId: string) => {
+    toast({
+      title: "Success!",
+      description: "Your subscription has been activated successfully.",
+    });
+    setSubscriptionStatus('ACTIVE');
+    setSelectedPackage(null);
+  };
+
+  const handleSubscriptionError = (error: any) => {
+    console.error('Subscription error:', error);
+    toast({
+      variant: "destructive",
+      title: "Subscription Error",
+      description: "There was a problem with your subscription. Please try again.",
+    });
+  };
+
+  const handleCustomPackageRequest = () => {
+    toast({
+      title: "Request Sent",
+      description: "We've received your request for a custom package. Our team will contact you soon.",
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -100,6 +154,24 @@ const ServicePackages = () => {
         </p>
       </div>
       
+      {subscriptionStatus === 'ACTIVE' && (
+        <Alert variant="default" className="mb-6 bg-green-50 border-green-200">
+          <Info className="h-4 w-4 text-green-600" />
+          <AlertDescription className="text-green-700">
+            You have an active subscription! You can select any package below with your current subscription.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {subscriptionStatus !== 'ACTIVE' && (
+        <Alert variant="default" className="mb-6 bg-blue-50 border-blue-200">
+          <AlertCircle className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-700">
+            Subscribe to one of our packages below to access our distribution services.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[1, 2, 3].map((i) => (
@@ -109,7 +181,38 @@ const ServicePackages = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {services.map((service) => (
-            <ServicePackageCard key={service.id} package={service} />
+            <div key={service.id} className="flex flex-col">
+              <ServicePackageCard 
+                package={service} 
+              />
+              <div className="mt-4">
+                {selectedPackage === service.id ? (
+                  <div className="p-4 border rounded-lg bg-muted">
+                    <h4 className="text-sm font-medium mb-3">Complete Subscription</h4>
+                    <PayPalSubscribeButton 
+                      onSuccess={handleSubscriptionSuccess}
+                      onError={handleSubscriptionError}
+                    />
+                    <Button 
+                      variant="outline" 
+                      className="w-full mt-2" 
+                      onClick={() => setSelectedPackage(null)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button 
+                    className="w-full" 
+                    variant={service.highlighted ? "default" : "outline"}
+                    onClick={() => handleSelectPackage(service.id)}
+                    disabled={subscriptionStatus === 'ACTIVE'}
+                  >
+                    {subscriptionStatus === 'ACTIVE' ? 'Already Subscribed' : `Subscribe to ${service.title}`}
+                  </Button>
+                )}
+              </div>
+            </div>
           ))}
         </div>
       )}
@@ -120,7 +223,7 @@ const ServicePackages = () => {
           Have specific distribution needs? We can create a tailored package to match your film's unique requirements.
         </p>
         <Card className="p-4">
-          <Button className="w-full">Request Custom Package</Button>
+          <Button className="w-full" onClick={handleCustomPackageRequest}>Request Custom Package</Button>
         </Card>
       </div>
     </div>

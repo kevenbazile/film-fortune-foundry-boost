@@ -28,15 +28,17 @@ const FilmmakerDashboard = () => {
           return;
         }
         
-        const { data, error } = await supabase.functions.invoke('check-subscription-status');
-        
-        if (error) {
-          console.error('Error checking subscription:', error);
-        } else {
-          setSubscriptionStatus(data.status);
+        try {
+          const { data, error } = await supabase.functions.invoke('check-subscription-status');
+          
+          if (error) {
+            console.error('Error checking subscription:', error);
+          } else {
+            setSubscriptionStatus(data.status);
+          }
+        } catch (error) {
+          console.error('Error checking subscription status:', error);
         }
-      } catch (error) {
-        console.error('Error checking subscription status:', error);
       } finally {
         setLoading(false);
       }
