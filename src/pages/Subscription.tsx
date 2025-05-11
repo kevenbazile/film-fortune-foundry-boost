@@ -3,21 +3,9 @@ import React from "react";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check } from "lucide-react";
 import { SUBSCRIPTION_PLANS } from "@/config/paypal";
-import PayPalHostedButton from "@/components/PayPalHostedButton";
-import { useToast } from "@/hooks/use-toast";
+import PayPalDirectButton from "@/components/paypal-direct/PayPalDirectButton";
 
 const Subscription = () => {
-  const { toast } = useToast();
-
-  const handlePaymentError = (error: any) => {
-    console.error('Payment error:', error);
-    toast({
-      variant: "destructive",
-      title: "Payment Error",
-      description: "There was a problem processing your payment. Please try again.",
-    });
-  };
-
   // Debug info to console
   React.useEffect(() => {
     console.log("PayPal Subscription Plan IDs:");
@@ -71,9 +59,8 @@ const Subscription = () => {
               </ul>
             </CardContent>
             <CardFooter>
-              <PayPalHostedButton 
-                plan="BASIC" 
-                onError={handlePaymentError} 
+              <PayPalDirectButton 
+                buttonId={SUBSCRIPTION_PLANS.BASIC.buttonId} 
                 className="w-full"
               />
             </CardFooter>
@@ -120,9 +107,8 @@ const Subscription = () => {
               </ul>
             </CardContent>
             <CardFooter>
-              <PayPalHostedButton 
-                plan="PREMIUM" 
-                onError={handlePaymentError} 
+              <PayPalDirectButton 
+                buttonId={SUBSCRIPTION_PLANS.PREMIUM.buttonId} 
                 className="w-full"
               />
             </CardFooter>
@@ -172,9 +158,8 @@ const Subscription = () => {
               </ul>
             </CardContent>
             <CardFooter>
-              <PayPalHostedButton 
-                plan="ELITE" 
-                onError={handlePaymentError} 
+              <PayPalDirectButton 
+                buttonId={SUBSCRIPTION_PLANS.ELITE.buttonId} 
                 className="w-full"
               />
             </CardFooter>

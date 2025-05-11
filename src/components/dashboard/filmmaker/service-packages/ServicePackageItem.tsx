@@ -1,9 +1,9 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "@/components/ui/button";
 import ServicePackageCard from "@/components/ServicePackageCard";
-import PayPalSubscribeButton from "@/components/PayPalSubscribeButton";
-import { useToast } from "@/hooks/use-toast";
+import PayPalDirectButton from "@/components/paypal-direct/PayPalDirectButton";
+import { SUBSCRIPTION_PLANS } from "@/config/paypal";
 
 interface ServicePackage {
   id: string;
@@ -34,9 +34,17 @@ const ServicePackageItem = ({
   onSubscriptionSuccess,
   onSubscriptionError,
 }: ServicePackageItemProps) => {
-  // Extract price number for PayPal
-  const getPackagePrice = () => {
-    return service.price.replace(/[^0-9.]/g, '');
+  // Function to get the PayPal button ID based on the package name
+  const getPayPalButtonId = () => {
+    if (service.title.toLowerCase().includes('basic')) {
+      return SUBSCRIPTION_PLANS.BASIC.buttonId;
+    } else if (service.title.toLowerCase().includes('premium')) {
+      return SUBSCRIPTION_PLANS.PREMIUM.buttonId;
+    } else if (service.title.toLowerCase().includes('elite')) {
+      return SUBSCRIPTION_PLANS.ELITE.buttonId;
+    }
+    // Default to basic if no match
+    return SUBSCRIPTION_PLANS.BASIC.buttonId;
   };
 
   return (
@@ -46,10 +54,9 @@ const ServicePackageItem = ({
         {selectedPackage === service.id ? (
           <div className="p-4 border rounded-lg bg-muted">
             <h4 className="text-sm font-medium mb-3">Complete Monthly Subscription</h4>
-            <PayPalSubscribeButton 
-              onSuccess={onSubscriptionSuccess}
-              onError={onSubscriptionError}
-              planPrice={getPackagePrice()}
+            <PayPalDirectButton 
+              buttonId={getPayPalButtonId()} 
+              className="w-full"
             />
             <Button 
               variant="outline" 

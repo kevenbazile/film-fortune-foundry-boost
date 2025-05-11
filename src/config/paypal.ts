@@ -36,6 +36,12 @@ export const SUBSCRIPTION_PLANS = {
   }
 };
 
+// Adding this for backwards compatibility with other components
+export const MONTHLY_PLAN = {
+  BASIC: SUBSCRIPTION_PLANS.BASIC,
+  PREMIUM: SUBSCRIPTION_PLANS.PREMIUM, 
+  ELITE: SUBSCRIPTION_PLANS.ELITE
+};
 
 // PayPal SDK script URL for hosted buttons
 export const getPayPalScriptUrl = () => {

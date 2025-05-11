@@ -3,6 +3,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import ServicePackageCard from "@/components/ServicePackageCard";
+import { SUBSCRIPTION_PLANS } from "@/config/paypal";
 
 // Sample data for service packages
 const servicePackages = [
