@@ -29,7 +29,7 @@ export const MONTHLY_PLAN = {
   description: "Monthly distribution service subscription"
 };
 
-// PayPal SDK script URL
+// PayPal SDK script URL - direct loading without edge function
 export const getPayPalScriptUrl = () => {
   return `https://www.paypal.com/sdk/js?client-id=${PAYPAL_CONFIG.CLIENT_ID}&currency=${MONTHLY_PLAN.currency}&intent=subscription`;
 };

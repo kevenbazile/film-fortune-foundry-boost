@@ -5,6 +5,7 @@ import { Loader2, RefreshCw, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { usePayPalSDK } from "@/hooks/usePayPalSDK";
 import PayPalButtonRenderer from "@/components/PayPalButtonRenderer";
+import { PAYPAL_CONFIG } from "@/config/paypal";
 
 // This is declared as a global interface to work with the PayPal SDK
 declare global {
@@ -43,6 +44,7 @@ const PayPalSubscribeButton = ({ onSuccess, onError, planPrice }: PayPalSubscrib
         </div>
         <p className="text-xs text-muted-foreground mb-2">
           We're experiencing technical difficulties connecting to our payment provider.
+          Please try again or contact support if the issue persists.
         </p>
         <Button 
           onClick={handleRetry} 
@@ -65,14 +67,14 @@ const PayPalSubscribeButton = ({ onSuccess, onError, planPrice }: PayPalSubscrib
             Loading PayPal...
           </Button>
           <p className="text-xs text-center text-muted-foreground">
-            {paypalMode === 'live' ? 'Using PayPal Live Production Mode' : 'Using PayPal Sandbox Mode'}
+            {PAYPAL_CONFIG.MODE === 'live' ? 'Using PayPal Live Production Mode' : 'Using PayPal Sandbox Mode'}
           </p>
         </div>
       ) : (
         <>
           {sdkReady && (
             <div className="text-xs text-right mb-1 text-muted-foreground">
-              {paypalMode === 'live' ? 'PayPal Live Production Mode' : 'PayPal Sandbox Mode'}
+              {PAYPAL_CONFIG.MODE === 'live' ? 'PayPal Live Production Mode' : 'PayPal Sandbox Mode'}
             </div>
           )}
           <PayPalButtonRenderer 

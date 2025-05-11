@@ -39,7 +39,15 @@ const PayPalButtonRenderer = ({
       const handleCreateSubscription = async (data: any, actions: any) => {
         try {
           console.log('Creating subscription with price:', planPrice);
-          return await createPayPalSubscription(planPrice);
+          // For direct SDK approach, use actions to create subscription
+          if (actions && actions.subscription && actions.subscription.create) {
+            return actions.subscription.create({
+              plan_id: 'P-5ML4271244454362WXNWU5NQ' // This is normally fetched from your backend
+            });
+          } else {
+            // Fallback to our API method if direct creation isn't available
+            return await createPayPalSubscription(planPrice);
+          }
         } catch (error) {
           console.error('Error creating subscription:', error);
           toast({
@@ -57,14 +65,18 @@ const PayPalButtonRenderer = ({
           // Data contains subscriptionID
           console.log('Subscription approved:', data);
           
-          await activatePayPalSubscription(data.subscriptionID);
-          
-          toast({
-            title: "Success!",
-            description: "Your subscription has been activated successfully.",
-          });
-          
-          if (onSuccess) onSuccess(data.subscriptionID);
+          if (data.subscriptionID) {
+            await activatePayPalSubscription(data.subscriptionID);
+            
+            toast({
+              title: "Success!",
+              description: "Your subscription has been activated successfully.",
+            });
+            
+            if (onSuccess) onSuccess(data.subscriptionID);
+          } else {
+            throw new Error('No subscription ID returned from PayPal');
+          }
           
         } catch (error) {
           console.error('Error handling subscription approval:', error);
@@ -106,14 +118,35 @@ const PayPalButtonRenderer = ({
       // Clear any existing buttons
       containerElement.innerHTML = '';
 
-      // Render the PayPal buttons
-      renderPayPalButtons(
-        containerId, 
-        handleCreateSubscription,
-        handleApprove,
-        handleError,
-        handleCancel
-      );
+      // Render the PayPal buttons - try direct rendering first
+      try {
+        if (window.paypal && window.paypal.Buttons) {
+          window.paypal.Buttons({
+            style: {
+              shape: 'rect',
+              color: 'blue',
+              layout: 'vertical',
+              label: 'subscribe'
+            },
+            createSubscription: handleCreateSubscription,
+            onApprove: handleApprove,
+            onError: handleError,
+            onCancel: handleCancel
+          }).render(`#${containerId}`);
+        } else {
+          // Fallback to our utility function
+          renderPayPalButtons(
+            containerId, 
+            handleCreateSubscription,
+            handleApprove,
+            handleError,
+            handleCancel
+          );
+        }
+      } catch (error) {
+        console.error('Error rendering PayPal buttons:', error);
+        if (onError) onError(error);
+      }
     } catch (error) {
       console.error('Error setting up PayPal buttons:', error);
       if (onError) onError(error);
