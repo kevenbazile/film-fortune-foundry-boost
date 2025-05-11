@@ -28,7 +28,7 @@ export const SUBSCRIPTION_PLANS = {
   },
   PREMIUM: {
     name: "Premium Distribution",
-    buttonId: "93PKADEJPRP5U",
+    buttonId: "93PKADEJPRP5U", 
     price: "500",
     currency: "USD",
   },

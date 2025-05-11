@@ -28,10 +28,23 @@ const PayPalHostedButton: React.FC<PayPalHostedButtonProps> = ({
   const buttonRef = useRef<HTMLDivElement>(null);
   const [isRendering, setIsRendering] = React.useState(true);
   const [renderError, setRenderError] = React.useState<string | null>(null);
-  const buttonId = SUBSCRIPTION_PLANS[plan].buttonId;
-  const containerId = `paypal-hosted-button-${plan}-${buttonId}`;
+  
+  // Get the correct button ID for the selected plan
+  const buttonId = SUBSCRIPTION_PLANS[plan]?.buttonId;
+  
+  // Create a unique container ID for each button instance to prevent conflicts
+  const containerId = `paypal-hosted-button-${plan}-${Math.random().toString(36).substring(2, 9)}`;
 
   useEffect(() => {
+    if (!buttonId) {
+      console.error(`Invalid plan: ${plan}. Button ID not found.`);
+      setRenderError(`Configuration error for ${plan} plan. Please contact support.`);
+      setIsRendering(false);
+      return;
+    }
+    
+    console.log(`Attempting to render PayPal button for plan ${plan} with ID: ${buttonId}`);
+    
     let attempts = 0;
     const maxAttempts = 10;
     
@@ -53,25 +66,23 @@ const PayPalHostedButton: React.FC<PayPalHostedButtonProps> = ({
       
       // Check if PayPal SDK and HostedButtons are available
       if (window.paypal?.HostedButtons) {
-        console.log(`Rendering PayPal hosted button for plan: ${plan} with ID: ${buttonId}`);
-        
         try {
           window.paypal.HostedButtons({
             hostedButtonId: buttonId
           })
           .render(`#${containerId}`)
           .then(() => {
-            console.log(`PayPal hosted button rendered successfully for plan: ${plan}`);
+            console.log(`PayPal hosted button rendered successfully for plan: ${plan} with ID: ${buttonId}`);
             setIsRendering(false);
           })
           .catch((err: any) => {
-            console.error('PayPal hosted button render error:', err);
+            console.error(`PayPal hosted button render error for ${plan}:`, err);
             setRenderError('Failed to display PayPal button. Please refresh the page or try again later.');
             setIsRendering(false);
             if (onError) onError(err);
           });
         } catch (error) {
-          console.error('Error when trying to render PayPal hosted button:', error);
+          console.error(`Error when trying to render PayPal hosted button for ${plan}:`, error);
           setRenderError('An error occurred with PayPal integration. Please try again later.');
           setIsRendering(false);
           if (onError) onError(error);
@@ -79,7 +90,7 @@ const PayPalHostedButton: React.FC<PayPalHostedButtonProps> = ({
       } else {
         // Retry after 300ms if PayPal not loaded yet
         attempts++;
-        console.log(`PayPal SDK not ready yet, attempt ${attempts}/${maxAttempts}`);
+        console.log(`PayPal SDK not ready yet for ${plan}, attempt ${attempts}/${maxAttempts}`);
         setTimeout(renderButton, 300);
       }
     };
