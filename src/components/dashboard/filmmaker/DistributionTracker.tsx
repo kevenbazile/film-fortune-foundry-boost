@@ -1,13 +1,23 @@
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Check } from "lucide-react";
+import { Check, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 const DistributionTracker = () => {
+  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  
+  // Distribution data
   const distributionProcess = [
     { stage: "Submission Review", status: "completed", completedOn: "Jan 15, 2024", notes: "Your film has been reviewed and approved for distribution." },
     { stage: "Encoding & Optimization", status: "completed", completedOn: "Jan 22, 2024", notes: "Your film has been encoded to meet platform requirements." },
@@ -24,6 +34,34 @@ const DistributionTracker = () => {
     { platform: "Apple TV+", status: "queued", expectedLive: "Mar 25, 2024", notes: "Scheduled for submission" },
     { platform: "Disney+", status: "queued", expectedLive: "Apr 5, 2024", notes: "Scheduled for submission" }
   ];
+
+  useEffect(() => {
+    const checkSubscription = async () => {
+      try {
+        setLoading(true);
+        
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session) {
+          setLoading(false);
+          return;
+        }
+        
+        const { data, error } = await supabase.functions.invoke('check-subscription-status');
+        
+        if (error) {
+          console.error('Error checking subscription:', error);
+        } else {
+          setSubscriptionStatus(data.status);
+        }
+      } catch (error) {
+        console.error('Error checking subscription status:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    checkSubscription();
+  }, []);
 
   // Calculate progress percentage based on completed stages
   const completedStages = distributionProcess.filter(stage => stage.status === "completed").length;
@@ -49,8 +87,46 @@ const DistributionTracker = () => {
     }
   };
 
+  const handleSubscribe = () => {
+    navigate("/subscription");
+    toast({
+      title: "Premium Features",
+      description: "Subscribe to unlock premium distribution features",
+    });
+  };
+  
+  // Check if user needs to subscribe
+  const renderSubscriptionAlert = () => {
+    if (loading) {
+      return null;
+    }
+    
+    if (subscriptionStatus !== 'ACTIVE') {
+      return (
+        <Alert className="mb-6 border-amber-200 bg-amber-50">
+          <AlertTriangle className="h-5 w-5 text-amber-600" />
+          <AlertTitle className="text-amber-800">Premium Feature</AlertTitle>
+          <AlertDescription className="text-amber-700">
+            Some distribution features require an active subscription.
+            <Button 
+              onClick={handleSubscribe}
+              variant="outline" 
+              className="ml-2 bg-amber-100 text-amber-900 hover:bg-amber-200 hover:text-amber-900"
+            >
+              Subscribe Now
+            </Button>
+          </AlertDescription>
+        </Alert>
+      );
+    }
+    
+    return null;
+  };
+
   return (
     <div className="space-y-8">
+      {renderSubscriptionAlert()}
+      
       <Card>
         <CardHeader>
           <CardTitle>Distribution Progress</CardTitle>
