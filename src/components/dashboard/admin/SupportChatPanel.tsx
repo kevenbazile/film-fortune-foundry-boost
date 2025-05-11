@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
@@ -67,8 +66,16 @@ export default function SupportChatPanel() {
       if (activeError) throw activeError;
       if (closedError) throw closedError;
 
-      setActiveRooms(active || []);
-      setClosedRooms(closed || []);
+      // Type cast the data to ensure compatibility with our ChatRoom type
+      setActiveRooms(active?.map(room => ({
+        ...room,
+        status: room.status as 'active' | 'closed' // Force the status to be the correct type
+      })) || []);
+      
+      setClosedRooms(closed?.map(room => ({
+        ...room,
+        status: room.status as 'active' | 'closed' // Force the status to be the correct type
+      })) || []);
     } catch (error) {
       console.error('Error fetching chat rooms:', error);
       toast({
@@ -89,7 +96,12 @@ export default function SupportChatPanel() {
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setMessages(data || []);
+      
+      // Type cast the data to ensure compatibility with our ChatMessage type
+      setMessages(data?.map(message => ({
+        ...message,
+        message_type: message.message_type as 'text' | 'system' // Force the message_type to be the correct type
+      })) || []);
       
       // Mark messages as read
       await supabase
@@ -187,6 +199,7 @@ export default function SupportChatPanel() {
         room_id: currentRoom.id,
         content: input,
         sender_id: user.id,
+        message_type: 'text' // Explicitly set the message type
       });
 
       if (error) throw error;
@@ -231,7 +244,8 @@ export default function SupportChatPanel() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'chat_messages' },
         (payload) => {
-          if (currentRoom && payload.new.room_id === currentRoom.id) {
+          const payloadData = payload.new;
+          if (currentRoom && payloadData && payloadData.room_id === currentRoom.id) {
             fetchMessages(currentRoom.id);
           }
         }

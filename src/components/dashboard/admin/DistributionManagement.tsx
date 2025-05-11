@@ -1,10 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ActiveDistributions from './distribution/ActiveDistributions';
 import PendingDistributions from './distribution/PendingDistributions';
 import PlatformIssues from './distribution/PlatformIssues';
 import SupportChatPanel from './SupportChatPanel';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
 
 const tabData = [
   { id: 'active', label: 'Active Distributions' },
@@ -15,6 +17,102 @@ const tabData = [
 
 const DistributionManagement = () => {
   const [activeTab, setActiveTab] = useState('active');
+  const [activeDistributions, setActiveDistributions] = useState([]);
+  const [pendingDistributions, setPendingDistributions] = useState([]);
+  const [platformIssues, setPlatformIssues] = useState([]);
+  const { toast } = useToast();
+
+  // Fetch distributions when component mounts
+  useEffect(() => {
+    fetchDistributions();
+  }, []);
+
+  const fetchDistributions = async () => {
+    try {
+      // Fetch active distributions
+      const { data: activeData } = await supabase
+        .from('distributions')
+        .select('*, films(*)')
+        .in('status', ['live', 'performance']);
+
+      // Fetch pending distributions
+      const { data: pendingData } = await supabase
+        .from('distributions')
+        .select('*, films(*)')
+        .in('status', ['encoding', 'metadata', 'submission']);
+
+      setActiveDistributions(activeData || []);
+      setPendingDistributions(pendingData || []);
+      
+      // Mock platform issues for now
+      setPlatformIssues([
+        {
+          platform: 'Netflix',
+          issue: 'API rate limiting issues',
+          affectedFilms: '3 films',
+          status: 'investigating',
+          reportedDate: '2025-05-10'
+        },
+        {
+          platform: 'Amazon Prime',
+          issue: 'Metadata validation failures',
+          affectedFilms: '2 films',
+          status: 'resolved',
+          reportedDate: '2025-05-09'
+        }
+      ]);
+    } catch (error) {
+      console.error('Error fetching distributions:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load distribution data',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleViewDistribution = (url: string) => {
+    window.open(url, '_blank');
+  };
+
+  const handleAdvanceStage = async (id: string, status: string) => {
+    try {
+      await supabase
+        .from('distributions')
+        .update({ status })
+        .eq('id', id);
+        
+      toast({
+        title: 'Status Updated',
+        description: `Distribution moved to ${status} stage`,
+      });
+      
+      fetchDistributions();
+    } catch (error) {
+      console.error('Error updating distribution:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update distribution status',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleSubmitIssue = (data: any) => {
+    // In a real app, this would submit to the database
+    setPlatformIssues(prevIssues => [...prevIssues, {
+      platform: data.platform,
+      issue: data.description,
+      affectedFilms: data.affectedFilms,
+      status: 'investigating',
+      reportedDate: new Date().toISOString().split('T')[0]
+    }]);
+    
+    toast({
+      title: 'Issue Reported',
+      description: 'Platform issue has been logged',
+    });
+  };
 
   return (
     <div className="space-y-6 p-6 pb-16">
@@ -40,15 +138,24 @@ const DistributionManagement = () => {
         </TabsList>
 
         <TabsContent value="active" className="space-y-4">
-          <ActiveDistributions />
+          <ActiveDistributions 
+            distributions={activeDistributions} 
+            onViewDistribution={handleViewDistribution} 
+          />
         </TabsContent>
 
         <TabsContent value="pending" className="space-y-4">
-          <PendingDistributions />
+          <PendingDistributions 
+            distributions={pendingDistributions}
+            onAdvanceStage={handleAdvanceStage}
+          />
         </TabsContent>
 
         <TabsContent value="issues" className="space-y-4">
-          <PlatformIssues />
+          <PlatformIssues 
+            issues={platformIssues}
+            onSubmitIssue={handleSubmitIssue}
+          />
         </TabsContent>
         
         <TabsContent value="support" className="space-y-4">
