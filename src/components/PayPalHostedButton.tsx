@@ -29,11 +29,17 @@ const PayPalHostedButton: React.FC<PayPalHostedButtonProps> = ({
   const [isRendering, setIsRendering] = React.useState(true);
   const [renderError, setRenderError] = React.useState<string | null>(null);
   const buttonId = SUBSCRIPTION_PLANS[plan].buttonId;
-  const containerId = `paypal-hosted-button-${buttonId}`;
+  const containerId = `paypal-hosted-button-${plan}-${buttonId}`;
 
   useEffect(() => {
     let attempts = 0;
     const maxAttempts = 10;
+    
+    // Clear any existing content in the container
+    const container = document.getElementById(containerId);
+    if (container) {
+      container.innerHTML = '';
+    }
     
     // Function to render PayPal button
     const renderButton = () => {
@@ -109,7 +115,12 @@ const PayPalHostedButton: React.FC<PayPalHostedButtonProps> = ({
           <span className="text-sm text-gray-600">Loading payment options...</span>
         </div>
       )}
-      <div id={containerId} className={isRendering ? 'opacity-0' : 'opacity-100'} data-plan={plan} data-button-id={buttonId}></div>
+      <div 
+        id={containerId} 
+        className={isRendering ? 'opacity-0' : 'opacity-100'} 
+        data-plan={plan} 
+        data-button-id={buttonId}
+      ></div>
     </div>
   );
 };

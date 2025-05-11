@@ -18,6 +18,14 @@ const Subscription = () => {
     });
   };
 
+  // Debug info to console
+  React.useEffect(() => {
+    console.log("PayPal Subscription Plan IDs:");
+    console.log("BASIC:", SUBSCRIPTION_PLANS.BASIC.buttonId);
+    console.log("PREMIUM:", SUBSCRIPTION_PLANS.PREMIUM.buttonId);
+    console.log("ELITE:", SUBSCRIPTION_PLANS.ELITE.buttonId);
+  }, []);
+
   return (
     <div className="container mx-auto px-4 py-12">
       <div className="max-w-5xl mx-auto">
