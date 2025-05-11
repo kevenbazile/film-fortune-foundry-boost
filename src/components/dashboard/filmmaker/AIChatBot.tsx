@@ -18,7 +18,6 @@ export const AIChatBot = ({ userId, isMinimized: initialMinimized = true }: AICh
   const {
     messages,
     isLoading,
-    isModelLoading,
     isInitialized,
     initializeModel,
     sendMessage
@@ -26,10 +25,10 @@ export const AIChatBot = ({ userId, isMinimized: initialMinimized = true }: AICh
 
   // Initialize model when chat is opened
   useEffect(() => {
-    if (!isMinimized && !isInitialized && !isModelLoading) {
+    if (!isMinimized && !isInitialized) {
       initializeModel();
     }
-  }, [isMinimized, isInitialized, isModelLoading, initializeModel]);
+  }, [isMinimized, isInitialized, initializeModel]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
@@ -135,13 +134,6 @@ export const AIChatBot = ({ userId, isMinimized: initialMinimized = true }: AICh
           </div>
         )}
         
-        {isModelLoading && (
-          <div className="flex flex-col items-center justify-center gap-2 my-8">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <p className="text-sm text-muted-foreground">Loading AI model...</p>
-          </div>
-        )}
-        
         <div ref={messagesEndRef} />
       </div>
 
@@ -154,12 +146,12 @@ export const AIChatBot = ({ userId, isMinimized: initialMinimized = true }: AICh
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
             placeholder="Ask me anything..."
-            disabled={isLoading || isModelLoading}
+            disabled={isLoading}
             className="flex-1 px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
           />
           <Button
             onClick={handleSendMessage}
-            disabled={isLoading || isModelLoading || !input.trim()}
+            disabled={isLoading || !input.trim()}
             size="icon"
           >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
