@@ -201,6 +201,65 @@ export type Database = {
           },
         ]
       }
+      platform_earnings: {
+        Row: {
+          amount: number
+          currency: string
+          entered_at: string | null
+          entered_by: string | null
+          film_id: string
+          id: string
+          notes: string | null
+          payment_date: string
+          payment_period_end: string | null
+          payment_period_start: string | null
+          platform: string
+          status: string
+          transaction_id: string | null
+          views: number | null
+        }
+        Insert: {
+          amount: number
+          currency?: string
+          entered_at?: string | null
+          entered_by?: string | null
+          film_id: string
+          id?: string
+          notes?: string | null
+          payment_date: string
+          payment_period_end?: string | null
+          payment_period_start?: string | null
+          platform: string
+          status?: string
+          transaction_id?: string | null
+          views?: number | null
+        }
+        Update: {
+          amount?: number
+          currency?: string
+          entered_at?: string | null
+          entered_by?: string | null
+          film_id?: string
+          id?: string
+          notes?: string | null
+          payment_date?: string
+          payment_period_end?: string | null
+          payment_period_start?: string | null
+          platform?: string
+          status?: string
+          transaction_id?: string | null
+          views?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_earnings_film_id_fkey"
+            columns: ["film_id"]
+            isOneToOne: false
+            referencedRelation: "films"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_revenue: {
         Row: {
           created_at: string
@@ -399,6 +458,36 @@ export type Database = {
           price?: number
           timeline_days?: number
           updated_at?: string
+        }
+        Relationships: []
+      }
+      staff_activity_log: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          staff_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          staff_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          staff_id?: string | null
         }
         Relationships: []
       }

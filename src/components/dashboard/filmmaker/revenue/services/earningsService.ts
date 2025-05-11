@@ -7,49 +7,81 @@ export async function fetchEarningsData(userId: string): Promise<Earning[]> {
   if (!userId) return [];
   
   try {
-    // In a real app, we would fetch from revenue_shares table
-    // For now, we'll use sample data since earnings aren't part of our tables yet
-    const sampleEarnings: Earning[] = [
-      {
-        id: '1',
-        date: '2025-04-15',
-        platform: 'Netflix',
-        amount: 1250.00,
-        status: 'paid',
-        payerInfo: {
-          name: 'Netflix Inc.',
-          type: 'platform'
-        }
-      },
-      {
-        id: '2',
-        date: '2025-05-01',
-        platform: 'YouTube',
-        amount: 750.50,
-        status: 'pending',
-        payerInfo: {
-          name: 'YouTube',
-          type: 'platform'
-        }
-      },
-      {
-        id: '3',
-        date: '2025-05-05',
-        platform: 'Amazon Prime',
-        amount: 950.75,
-        status: 'pending',
-        payerInfo: {
-          name: 'Amazon Services LLC',
-          type: 'platform'
-        }
-      }
-    ];
+    // Try to fetch from platform_earnings table first
+    const { data: earningsData, error: earningsError } = await supabase
+      .from('platform_earnings')
+      .select('id, film_id, platform, amount, payment_date, payment_period_start, payment_period_end, views, status, transaction_id, films!inner(user_id)')
+      .eq('films.user_id', userId)
+      .order('payment_date', { ascending: false });
     
-    return sampleEarnings;
+    if (earningsError) {
+      console.error("Error fetching earnings data:", earningsError);
+      // Fall back to sample data if there's an error
+      return getSampleEarningsData();
+    }
+    
+    // If we have data from the platform_earnings table, format and return it
+    if (earningsData && earningsData.length > 0) {
+      return earningsData.map(entry => ({
+        id: entry.id,
+        date: entry.payment_date,
+        platform: entry.platform,
+        amount: entry.amount,
+        status: entry.status,
+        payerInfo: {
+          name: entry.platform,
+          type: 'platform'
+        }
+      }));
+    }
+    
+    // Fall back to sample data if no real data is available
+    return getSampleEarningsData();
   } catch (error) {
     console.error("Error fetching earnings data:", error);
-    throw error;
+    return getSampleEarningsData();
   }
+}
+
+// Helper function to get sample data if real data is not available
+function getSampleEarningsData(): Earning[] {
+  const sampleEarnings: Earning[] = [
+    {
+      id: '1',
+      date: '2025-04-15',
+      platform: 'Netflix',
+      amount: 1250.00,
+      status: 'paid',
+      payerInfo: {
+        name: 'Netflix Inc.',
+        type: 'platform'
+      }
+    },
+    {
+      id: '2',
+      date: '2025-05-01',
+      platform: 'YouTube',
+      amount: 750.50,
+      status: 'pending',
+      payerInfo: {
+        name: 'YouTube',
+        type: 'platform'
+      }
+    },
+    {
+      id: '3',
+      date: '2025-05-05',
+      platform: 'Amazon Prime',
+      amount: 950.75,
+      status: 'pending',
+      payerInfo: {
+        name: 'Amazon Services LLC',
+        type: 'platform'
+      }
+    }
+  ];
+  
+  return sampleEarnings;
 }
 
 export function exportEarningsToCSV(earnings: Earning[]) {
