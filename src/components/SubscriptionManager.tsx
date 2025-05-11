@@ -84,7 +84,7 @@ const SubscriptionManager = ({
       <div id={`paypal-button-${buttonId}`} className="paypal-button-container">
         <PayPalDirectButton
           buttonId={buttonId}
-          onSuccess={() => handleSubscriptionStatus(buttonId)}
+          className="w-full"
         />
       </div>
       

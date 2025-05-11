@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -16,8 +15,16 @@ export interface Earning {
   };
 }
 
+export interface RevenueData {
+  totalRevenue: number;
+  growthRate: number;
+  daysSinceRelease: number;
+  platformRevenue: { name: string; revenue: number }[];
+  growthTimeline: { month: string; revenue: number }[];
+}
+
 export function useRevenueData() {
-  const [revenue, setRevenue] = useState<any>(null);
+  const [revenue, setRevenue] = useState<RevenueData | null>(null);
   const [earnings, setEarnings] = useState<Earning[]>([]);
   const [loading, setLoading] = useState(true);
   const [userTier, setUserTier] = useState<'basic' | 'premium' | 'elite' | null>(null);
@@ -81,7 +88,7 @@ export function useRevenueData() {
       // Note: In a real app, you'd fetch actual data from revenue_shares or similar tables
       
       // For our implementation, we'll simulate revenue data
-      setRevenue({
+      const mockRevenueData: RevenueData = {
         totalRevenue: 5280.50,
         growthRate: 16.7,
         daysSinceRelease: 78,
@@ -98,7 +105,9 @@ export function useRevenueData() {
           { month: "May", revenue: 3980 },
           { month: "Jun", revenue: 5280 }
         ]
-      });
+      };
+      
+      setRevenue(mockRevenueData);
     } catch (error) {
       console.error("Error fetching revenue data:", error);
       toast({

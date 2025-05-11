@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, LineChart, Line } from "recharts";
@@ -22,16 +23,13 @@ const RevenueAnalytics = ({ revenue, loading, userTier }: RevenueAnalyticsProps)
   };
 
   const calculateTotalRevenue = (data: any) => {
-    if (!data || data.length === 0) return 0;
-    return data.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+    if (!data || !data.totalRevenue) return 0;
+    return typeof data.totalRevenue === 'number' ? data.totalRevenue : 0;
   };
 
   const calculateRevenueGrowth = (data: any) => {
-    if (!data || data.length < 2) return 0;
-    const currentRevenue = data[data.length - 1].amount || 0;
-    const previousRevenue = data[data.length - 2].amount || 0;
-    if (previousRevenue === 0) return currentRevenue > 0 ? 100 : 0;
-    return ((currentRevenue - previousRevenue) / previousRevenue) * 100;
+    if (!data || !data.growthRate) return 0;
+    return typeof data.growthRate === 'number' ? data.growthRate : 0;
   };
 
   const totalRevenue = calculateTotalRevenue(revenue);
@@ -71,6 +69,33 @@ const RevenueAnalytics = ({ revenue, loading, userTier }: RevenueAnalyticsProps)
     );
   }
 
+  // Check if revenue data is available and properly structured
+  const hasRevenueData = revenue && 
+    (revenue.totalRevenue > 0 || 
+    (revenue.platformRevenue && revenue.platformRevenue.length > 0) || 
+    (revenue.growthTimeline && revenue.growthTimeline.length > 0));
+
+  if (!hasRevenueData) {
+    return (
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>Revenue Analytics</CardTitle>
+          <CardDescription>
+            {userTier ? "Not enough data to show analytics yet." : "Subscribe to view analytics."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-center text-muted-foreground py-8">
+            {userTier 
+              ? "We'll start showing data once your film begins generating revenue."
+              : "Purchase a subscription plan to access revenue tracking features."
+            }
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="w-full">
       <CardHeader>
@@ -105,19 +130,21 @@ const RevenueAnalytics = ({ revenue, loading, userTier }: RevenueAnalyticsProps)
           </div>
         </div>
 
-        <div className="mb-8">
-          <h4 className="text-md font-semibold mb-2">Revenue Chart</h4>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={revenue} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip content={renderTooltipContent} />
-              <Legend />
-              <Bar dataKey="amount" fill={chartConfig.platforms.color} name={chartConfig.platforms.label} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        {revenue.platformRevenue && revenue.platformRevenue.length > 0 && (
+          <div className="mb-8">
+            <h4 className="text-md font-semibold mb-2">Revenue Chart</h4>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={revenue.platformRevenue} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip content={renderTooltipContent} />
+                <Legend />
+                <Bar dataKey="revenue" fill={chartConfig.platforms.color} name={chartConfig.platforms.label} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
