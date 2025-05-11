@@ -11,11 +11,12 @@ interface PaymentSummaryProps {
     totalPending: number;
     totalFailed: number;
     nextPaymentDate: Date | null;
+    totalProcessing?: number;
   };
 }
 
 const PaymentSummary: React.FC<PaymentSummaryProps> = ({ paymentData, summary }) => {
-  const processingAmount = paymentData
+  const processingAmount = summary.totalProcessing || paymentData
     .filter(p => p.status === 'processing')
     .reduce((sum, p) => sum + p.amount, 0);
   
