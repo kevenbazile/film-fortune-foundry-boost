@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { PaymentStatus } from "../../revenue/types";
 import { format } from "date-fns";
@@ -37,7 +38,7 @@ export async function fetchPaymentData(
     // Then get paginated data
     const { data: earningsData, error: earningsError } = await supabase
       .from('platform_earnings')
-      .select('id, film_id, platform, amount, payment_date, status, payment_method, transaction_id, views, films!inner(title)')
+      .select('id, film_id, platform, amount, payment_date, status, transaction_id, views, films!inner(title, user_id)')
       .eq('films.user_id', userId)
       .order(dbColumn, { ascending: sortDirection === 'asc' })
       .range(page * pageSize, (page + 1) * pageSize - 1);
@@ -52,11 +53,11 @@ export async function fetchPaymentData(
       id: earning.id,
       filmTitle: earning.films?.title || 'Unknown Film',
       platform: earning.platform,
-      location: earning.location || 'Global', // Default location if not provided
+      location: 'Global', // Default location since it's not in the database
       amount: earning.amount,
       paymentDate: earning.payment_date,
       status: earning.status as 'pending' | 'paid' | 'processing',
-      paymentMethod: earning.payment_method || 'Direct Deposit',
+      paymentMethod: 'Direct Deposit', // Default payment method since it's not in the database
       transactionId: earning.transaction_id || '',
       views: earning.views || 0
     }));
