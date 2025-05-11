@@ -1,14 +1,14 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import PaymentSummary from "./payment-status/PaymentSummary";
 import PaymentStatusHeader from "./payment-status/PaymentStatusHeader";
 import PaymentTable from "./payment-status/PaymentTable";
-import PaymentMethods from "./payment-status/PaymentMethods";
+import PayoutRequestForm from "./payment-status/PayoutRequestForm";
 import { usePaymentData } from "./payment-status/hooks/usePaymentData";
 
 const PaymentStatus = () => {
+  
   const [filters, setFilters] = useState({
     status: "all",
     platform: "all",
@@ -27,7 +27,7 @@ const PaymentStatus = () => {
     sortDirection
   );
   
-  // Filter payment data based on selected filters
+  
   const filteredPaymentData = paymentData.filter(payment => {
     if (filters.status !== "all" && payment.status !== filters.status) {
       return false;
@@ -94,7 +94,7 @@ const PaymentStatus = () => {
         </CardContent>
       </Card>
 
-      <PaymentMethods />
+      <PayoutRequestForm />
     </div>
   );
 };

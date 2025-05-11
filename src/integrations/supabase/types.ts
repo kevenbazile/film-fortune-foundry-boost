@@ -201,6 +201,39 @@ export type Database = {
           },
         ]
       }
+      payout_requests: {
+        Row: {
+          amount: number | null
+          cashapp_tag: string
+          created_at: string
+          email: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          cashapp_tag: string
+          created_at?: string
+          email: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          cashapp_tag?: string
+          created_at?: string
+          email?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       platform_earnings: {
         Row: {
           amount: number
