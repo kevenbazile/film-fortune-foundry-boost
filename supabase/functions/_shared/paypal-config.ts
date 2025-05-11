@@ -20,8 +20,8 @@ export function getPayPalConfig() {
   return {
     mode,
     apiUrl,
-    clientId: Deno.env.get('PAYPAL_CLIENT_ID') || 'AU9i5m6fo3Z4AOkhgpu_Lkzx75XmV_wdKOPCcjRSXYMI354m0a7Rt5jgtU1Md__10u4JGLOiqZebZecV',
-    secret: Deno.env.get('PAYPAL_SECRET') || 'EHwLiw7zTCfl-PJACCya-3DRNNiVVm_lPuaKqIY8USCTj6dVnRZn83LmAwH9PUskrrFE2oD1FZvp8hDR'
+    clientId: Deno.env.get('PAYPAL_CLIENT_ID') || 'AWLqCibRJ6ZC89ARQ8HFCoL9z57Lg0qvbY2HtLKrJwmqjM8C3XRlR2h9b0_g5m3Wb8TRGjP30Kj_td75',
+    secret: Deno.env.get('PAYPAL_SECRET') || 'EJeSkREnt3W8iCuLAG2ihBJqfjqThj5YjrCknRt_7TmS0SrppC8cP7_bahYUVt0h0whnwxIaeWDjHG8-'
   };
 }
 

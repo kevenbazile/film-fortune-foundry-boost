@@ -11,10 +11,10 @@ export const PAYPAL_CONFIG = {
   MODE: 'sandbox',
   
   // Sandbox credentials (replace with production credentials for live)
-  CLIENT_ID: 'AU9i5m6fo3Z4AOkhgpu_Lkzx75XmV_wdKOPCcjRSXYMI354m0a7Rt5jgtU1Md__10u4JGLOiqZebZecV',
+  CLIENT_ID: 'AWLqCibRJ6ZC89ARQ8HFCoL9z57Lg0qvbY2HtLKrJwmqjM8C3XRlR2h9b0_g5m3Wb8TRGjP30Kj_td75',
   
   // DO NOT expose client secret in browser code - only use in edge functions
-  SECRET: 'EHwLiw7zTCfl-PJACCya-3DRNNiVVm_lPuaKqIY8USCTj6dVnRZn83LmAwH9PUskrrFE2oD1FZvp8hDR',
+  SECRET: 'EJeSkREnt3W8iCuLAG2ihBJqfjqThj5YjrCknRt_7TmS0SrppC8cP7_bahYUVt0h0whnwxIaeWDjHG8-',
   
   // API URLs
   API_URL: 'https://api-m.sandbox.paypal.com', // Change to https://api-m.paypal.com for production
