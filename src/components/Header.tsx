@@ -73,7 +73,7 @@ const Header = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="font-bold text-xl text-primary">
-            Film Fortune Foundry
+            SceneVox
           </Link>
 
           {/* Desktop Navigation */}
