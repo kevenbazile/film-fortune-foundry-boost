@@ -1,91 +1,27 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Check, AlertTriangle } from "lucide-react";
+import { Check, AlertTriangle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { useDistributionData } from "./distribution/useDistributionData";
 
 const DistributionTracker = () => {
-  const [subscriptionStatus, setSubscriptionStatus] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { 
+    distributionStages, 
+    platformStatuses, 
+    progress,
+    loading, 
+    userTier 
+  } = useDistributionData();
+  
   const { toast } = useToast();
   const navigate = useNavigate();
-  
-  // Distribution data
-  const distributionProcess = [
-    { stage: "Submission Review", status: "completed", completedOn: "Jan 15, 2024", notes: "Your film has been reviewed and approved for distribution." },
-    { stage: "Encoding & Optimization", status: "completed", completedOn: "Jan 22, 2024", notes: "Your film has been encoded to meet platform requirements." },
-    { stage: "Metadata Preparation", status: "completed", completedOn: "Jan 28, 2024", notes: "All metadata including descriptions, cast, and technical specs have been prepared." },
-    { stage: "Platform Submission", status: "in-progress", completedOn: null, notes: "Your film is being submitted to selected platforms." },
-    { stage: "QA & Validation", status: "pending", completedOn: null, notes: "Quality assurance checks will ensure your film displays correctly on all platforms." },
-    { stage: "Live Distribution", status: "pending", completedOn: null, notes: "Your film will be publicly available on all selected platforms." }
-  ];
-
-  const platformStatus = [
-    { platform: "Netflix", status: "submitted", expectedLive: "Mar 15, 2024", notes: "Currently in review queue" },
-    { platform: "Amazon Prime", status: "processing", expectedLive: "Mar 10, 2024", notes: "Metadata verification in progress" },
-    { platform: "Hulu", status: "submitted", expectedLive: "Mar 20, 2024", notes: "Awaiting content review" },
-    { platform: "Apple TV+", status: "queued", expectedLive: "Mar 25, 2024", notes: "Scheduled for submission" },
-    { platform: "Disney+", status: "queued", expectedLive: "Apr 5, 2024", notes: "Scheduled for submission" }
-  ];
-
-  useEffect(() => {
-    const checkSubscription = async () => {
-      try {
-        setLoading(true);
-        
-        const { data: session } = await supabase.auth.getSession();
-        if (!session.session) {
-          setLoading(false);
-          return;
-        }
-        
-        const { data, error } = await supabase.functions.invoke('check-subscription-status');
-        
-        if (error) {
-          console.error('Error checking subscription:', error);
-        } else {
-          setSubscriptionStatus(data.status);
-        }
-      } catch (error) {
-        console.error('Error checking subscription status:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    checkSubscription();
-  }, []);
-
-  // Calculate progress percentage based on completed stages
-  const completedStages = distributionProcess.filter(stage => stage.status === "completed").length;
-  const totalStages = distributionProcess.length;
-  const progressPercentage = Math.floor((completedStages / totalStages) * 100);
-
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case "completed":
-        return <Badge className="bg-green-500">Completed</Badge>;
-      case "in-progress":
-        return <Badge className="bg-blue-500">In Progress</Badge>;
-      case "pending":
-        return <Badge variant="outline" className="text-muted-foreground">Pending</Badge>;
-      case "submitted":
-        return <Badge className="bg-purple-500">Submitted</Badge>;
-      case "processing":
-        return <Badge className="bg-yellow-500">Processing</Badge>;
-      case "queued":
-        return <Badge variant="outline" className="text-muted-foreground">Queued</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
-  };
 
   const handleSubscribe = () => {
     navigate("/subscription");
@@ -101,7 +37,7 @@ const DistributionTracker = () => {
       return null;
     }
     
-    if (subscriptionStatus !== 'ACTIVE') {
+    if (userTier !== 'premium' && userTier !== 'elite') {
       return (
         <Alert className="mb-6 border-amber-200 bg-amber-50">
           <AlertTriangle className="h-5 w-5 text-amber-600" />
@@ -123,6 +59,36 @@ const DistributionTracker = () => {
     return null;
   };
 
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "completed":
+        return <Badge className="bg-green-500">Completed</Badge>;
+      case "in-progress":
+        return <Badge className="bg-blue-500">In Progress</Badge>;
+      case "pending":
+        return <Badge variant="outline" className="text-muted-foreground">Pending</Badge>;
+      case "submitted":
+        return <Badge className="bg-purple-500">Submitted</Badge>;
+      case "processing":
+        return <Badge className="bg-yellow-500">Processing</Badge>;
+      case "queued":
+        return <Badge variant="outline" className="text-muted-foreground">Queued</Badge>;
+      case "live":
+        return <Badge className="bg-green-500">Live</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <p className="text-muted-foreground">Loading your distribution data...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {renderSubscriptionAlert()}
@@ -131,16 +97,16 @@ const DistributionTracker = () => {
         <CardHeader>
           <CardTitle>Distribution Progress</CardTitle>
           <CardDescription>
-            Overall progress: {progressPercentage}% complete
-            <Progress value={progressPercentage} className="mt-2" />
+            Overall progress: {progress}% complete
+            <Progress value={progress} className="mt-2" />
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-8">
-            {distributionProcess.map((stage, index) => (
+            {distributionStages.map((stage, index) => (
               <div key={index} className="relative pl-8 pb-8">
                 {/* Connecting line */}
-                {index < distributionProcess.length - 1 && (
+                {index < distributionStages.length - 1 && (
                   <div className={`absolute left-[15px] top-[30px] h-full w-0.5 ${stage.status === 'completed' ? 'bg-primary' : 'bg-muted-foreground/20'}`}></div>
                 )}
                 
@@ -172,36 +138,47 @@ const DistributionTracker = () => {
           <CardDescription>Current status of your film on each platform</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Platform</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Expected Live Date</TableHead>
-                <TableHead>Notes</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {platformStatus.map((platform, index) => (
-                <TableRow key={index}>
-                  <TableCell className="font-medium">{platform.platform}</TableCell>
-                  <TableCell>{getStatusBadge(platform.status)}</TableCell>
-                  <TableCell>{platform.expectedLive}</TableCell>
-                  <TableCell className="text-muted-foreground">{platform.notes}</TableCell>
+          {platformStatuses.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Platform</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Expected Live Date</TableHead>
+                  <TableHead>Notes</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {platformStatuses.map((platform, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">{platform.platform}</TableCell>
+                    <TableCell>{getStatusBadge(platform.status)}</TableCell>
+                    <TableCell>{platform.expectedLiveDate}</TableCell>
+                    <TableCell className="text-muted-foreground">{platform.notes}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Info className="h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-muted-foreground">No platform distribution information available yet.</p>
+              <p className="text-sm text-muted-foreground mt-2">Your film will appear here once the distribution process begins.</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
-      <Alert>
-        <AlertTitle>Important Distribution Update</AlertTitle>
-        <AlertDescription>
-          Your film "The Last Journey" is on track for distribution across all platforms by April 5, 2024. 
-          Current estimate for first viewership data: April 15, 2024. Please check back regularly for updates.
-        </AlertDescription>
-      </Alert>
+      {platformStatuses.length > 0 && (
+        <Alert>
+          <AlertTitle>Important Distribution Update</AlertTitle>
+          <AlertDescription>
+            Your film is on track for distribution across all platforms.
+            First viewership data will be available approximately 14 days after your film goes live. 
+            Please check back regularly for updates.
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 };
