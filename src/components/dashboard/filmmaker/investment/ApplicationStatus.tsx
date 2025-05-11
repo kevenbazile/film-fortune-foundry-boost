@@ -5,18 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { formatDistanceToNow } from "date-fns";
-
-interface Application {
-  id: string;
-  project_title: string;
-  project_type: string;
-  requested_amount: number;
-  status: string;
-  submission_date: string;
-  review_date: string | null;
-  funding_date: string | null;
-  review_notes: string | null;
-}
+import { Application } from "./types";
+import { fetchUserApplications } from "./services/investmentService";
 
 const getStatusColor = (status: string) => {
   const colors = {
@@ -36,56 +26,36 @@ const ApplicationStatus = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchApplications();
-  }, []);
-
-  const fetchApplications = async () => {
-    try {
-      setLoading(true);
-      
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session) {
-        toast({
-          title: "Authentication required",
-          description: "Please log in to view your applications",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Using a raw SQL query to get around the TypeScript issues
-      // because the table was just created and the types aren't updated yet
-      const { data, error } = await supabase
-        .rpc('get_community_fund_applications', {
-          user_id_param: session.session.user.id
-        });
-
-      if (error) {
-        console.error("Error fetching with RPC:", error);
+    const getApplications = async () => {
+      try {
+        setLoading(true);
         
-        // Fallback to direct query
-        const { data: directData, error: directError } = await supabase
-          .from('community_fund_applications')
-          .select('*')
-          .eq('user_id', session.session.user.id)
-          .order('submission_date', { ascending: false });
-          
-        if (directError) throw directError;
-        setApplications(directData as Application[] || []);
-      } else {
-        setApplications(data as Application[] || []);
+        const { data: session } = await supabase.auth.getSession();
+        if (!session.session) {
+          toast({
+            title: "Authentication required",
+            description: "Please log in to view your applications",
+            variant: "destructive"
+          });
+          return;
+        }
+
+        const apps = await fetchUserApplications(session.session.user.id);
+        setApplications(apps);
+      } catch (error: any) {
+        console.error("Error fetching applications:", error);
+        toast({
+          title: "Error",
+          description: error.message || "Failed to load your applications",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
       }
-    } catch (error: any) {
-      console.error("Error fetching applications:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to load your applications",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    getApplications();
+  }, [toast]);
 
   if (loading) {
     return (
