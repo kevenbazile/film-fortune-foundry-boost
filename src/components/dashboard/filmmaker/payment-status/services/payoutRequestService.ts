@@ -13,9 +13,18 @@ export interface PayoutRequest {
 
 export async function submitPayoutRequest(email: string, cashappTag: string, amount?: number): Promise<boolean> {
   try {
+    // Get the current user session to retrieve the user ID
+    const { data: sessionData } = await supabase.auth.getSession();
+    const user_id = sessionData.session?.user.id;
+    
+    if (!user_id) {
+      throw new Error("User not authenticated");
+    }
+    
     const { error } = await supabase
       .from('payout_requests')
       .insert({
+        user_id,
         email,
         cashapp_tag: cashappTag,
         amount: amount || null
@@ -42,9 +51,19 @@ export async function submitPayoutRequest(email: string, cashappTag: string, amo
 
 export async function fetchUserPayoutRequests(): Promise<PayoutRequest[]> {
   try {
+    // Get the current user session to retrieve the user ID
+    const { data: sessionData } = await supabase.auth.getSession();
+    const user_id = sessionData.session?.user.id;
+    
+    if (!user_id) {
+      console.error("User not authenticated");
+      return [];
+    }
+    
     const { data, error } = await supabase
       .from('payout_requests')
       .select('*')
+      .eq('user_id', user_id)
       .order('created_at', { ascending: false });
     
     if (error) throw error;
