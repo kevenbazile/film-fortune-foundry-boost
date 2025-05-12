@@ -145,7 +145,7 @@ const Header = () => {
                       alt="MoodSwang Logo" 
                       className="h-10 mr-2" 
                     />
-                    <span className="font-bold text-xl">MoodSwang</span>
+                    <span className="font-bold text-xl">SceneVox</span>
                   </div>
                   
                   {navItems.map((item) => (
