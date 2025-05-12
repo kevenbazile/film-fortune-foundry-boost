@@ -80,7 +80,7 @@ const Header = () => {
               alt="MoodSwang Logo" 
               className="h-8 mr-2" 
             />
-            <span>MoodSwang</span>
+            <span>SceneVox</span>
           </Link>
 
           {/* Desktop Navigation */}
