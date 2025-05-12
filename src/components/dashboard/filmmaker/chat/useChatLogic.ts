@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { useAIAssistant } from '@/hooks/useAIAssistant';
+import { useAIAssistant } from '@/hooks/ai/useAIAssistant';
 
 export const useChatLogic = (userId: string, isInitiallyMinimized: boolean = true) => {
   const [isMinimized, setIsMinimized] = useState(isInitiallyMinimized);
@@ -64,3 +64,4 @@ export const useChatLogic = (userId: string, isInitiallyMinimized: boolean = tru
     currentRoomId
   };
 };
+

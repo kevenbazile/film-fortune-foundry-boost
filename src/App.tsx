@@ -23,7 +23,7 @@ import { toast } from "./components/ui/use-toast";
 import Subscription from "./pages/Subscription";
 
 // Lazy load the AIChatBot component
-const AIChatBot = lazy(() => import("./components/dashboard/filmmaker/chat/AIChatBot"));
+const AIChatBot = lazy(() => import("./components/dashboard/filmmaker/chat/AIChatBot").then(module => ({ default: module.AIChatBot })));
 
 const queryClient = new QueryClient();
 

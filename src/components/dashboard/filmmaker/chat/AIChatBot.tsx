@@ -10,6 +10,7 @@ import { ChatInput } from './ChatInput';
 import { useChatLogic } from './useChatLogic';
 import { AIChatBotProps } from './types';
 
+// Export with named export for backward compatibility
 export const AIChatBot = ({ userId, isMinimized: initialMinimized = true }: AIChatBotProps) => {
   const { user } = useAuth();
   
@@ -88,3 +89,7 @@ export const AIChatBot = ({ userId, isMinimized: initialMinimized = true }: AICh
     </div>
   );
 };
+
+// Export as default as well for lazy loading
+export default AIChatBot;
+
