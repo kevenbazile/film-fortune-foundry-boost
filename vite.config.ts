@@ -17,52 +17,29 @@ export default defineConfig(({ mode }) => ({
     componentTagger(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'robots.txt', 'icons/*.png'],
+      includeAssets: ['favicon.ico', 'robots.txt', 'lovable-uploads/*.png'],
       manifest: {
         name: "SceneVox - Film Distribution Platform",
-        short_name: "SceneVox",
+        short_name: "MoodSwang",
         description: "Turn your films into fortune with professional distribution and monetization",
-        theme_color: "#7c3aed",
+        theme_color: "#FFCC00",
+        background_color: "#000000",
         icons: [
           {
-            src: '/icons/icon-72x72.png',
-            sizes: '72x72',
-            type: 'image/png'
-          },
-          {
-            src: '/icons/icon-96x96.png',
-            sizes: '96x96',
-            type: 'image/png'
-          },
-          {
-            src: '/icons/icon-128x128.png',
-            sizes: '128x128',
-            type: 'image/png'
-          },
-          {
-            src: '/icons/icon-144x144.png',
-            sizes: '144x144',
-            type: 'image/png'
-          },
-          {
-            src: '/icons/icon-152x152.png',
-            sizes: '152x152',
-            type: 'image/png'
-          },
-          {
-            src: '/icons/icon-192x192.png',
+            src: '/lovable-uploads/0d52698e-5b20-4505-a780-227a7f6d6a1a.png',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: '/icons/icon-384x384.png',
-            sizes: '384x384',
+            src: '/lovable-uploads/130ac2b7-3097-4b9f-91af-63edb898f0eb.png',
+            sizes: '512x512',
             type: 'image/png'
           },
           {
-            src: '/icons/icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
+            src: '/lovable-uploads/0d52698e-5b20-4505-a780-227a7f6d6a1a.png',
+            sizes: '192x192',
+            type: 'image/png',
+            purpose: 'any maskable'
           }
         ],
       },
@@ -87,6 +64,18 @@ export default defineConfig(({ mode }) => ({
             handler: 'CacheFirst',
             options: {
               cacheName: 'images',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              }
+            }
+          },
+          {
+            // Add special handling for lovable uploads
+            urlPattern: /lovable-uploads\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'custom-images',
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days

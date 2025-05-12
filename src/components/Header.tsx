@@ -74,8 +74,13 @@ const Header = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="font-bold text-xl text-primary">
-            SceneVox
+          <Link to="/" className="font-bold text-xl text-primary flex items-center">
+            <img 
+              src="/lovable-uploads/130ac2b7-3097-4b9f-91af-63edb898f0eb.png" 
+              alt="MoodSwang Logo" 
+              className="h-8 mr-2" 
+            />
+            <span>MoodSwang</span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -134,6 +139,15 @@ const Header = () => {
               </SheetTrigger>
               <SheetContent side="right">
                 <nav className="flex flex-col space-y-4 mt-8">
+                  <div className="flex items-center mb-4">
+                    <img 
+                      src="/lovable-uploads/0d52698e-5b20-4505-a780-227a7f6d6a1a.png" 
+                      alt="MoodSwang Logo" 
+                      className="h-10 mr-2" 
+                    />
+                    <span className="font-bold text-xl">MoodSwang</span>
+                  </div>
+                  
                   {navItems.map((item) => (
                     <Link
                       key={item.name}

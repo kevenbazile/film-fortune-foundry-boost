@@ -1,88 +1,42 @@
 
 {
-  "name": "SceneVox - Film Distribution Platform",
-  "short_name": "SceneVox",
+  "name": "MoodSwang - Film Distribution Platform",
+  "short_name": "MoodSwang",
   "description": "Turn your films into fortune with professional distribution and monetization",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#7c3aed",
+  "background_color": "#000000",
+  "theme_color": "#FFCC00",
   "orientation": "any",
   "icons": [
     {
-      "src": "/icons/icon-72x72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-96x96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-128x128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-144x144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-152x152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-192x192.png",
+      "src": "/lovable-uploads/0d52698e-5b20-4505-a780-227a7f6d6a1a.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "/icons/icon-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
+      "src": "/lovable-uploads/130ac2b7-3097-4b9f-91af-63edb898f0eb.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
+      "type": "image/png"
     }
   ],
   "related_applications": [],
   "prefer_related_applications": false,
-  "screenshots": [
-    {
-      "src": "/screenshots/screen1.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "purpose": "any"
-    }
-  ],
-  "categories": ["entertainment", "business", "productivity"],
   "shortcuts": [
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
       "description": "View your film distribution dashboard",
       "url": "/dashboard",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/lovable-uploads/0d52698e-5b20-4505-a780-227a7f6d6a1a.png", "sizes": "192x192" }]
     },
     {
       "name": "How It Works",
       "short_name": "How It Works",
       "description": "Learn how film distribution works",
       "url": "/how-it-works",
-      "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
+      "icons": [{ "src": "/lovable-uploads/0d52698e-5b20-4505-a780-227a7f6d6a1a.png", "sizes": "192x192" }]
     }
   ]
 }
