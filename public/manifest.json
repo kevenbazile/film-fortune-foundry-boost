@@ -1,7 +1,7 @@
 
 {
-  "name": "MoodSwang - Film Distribution Platform",
-  "short_name": "MoodSwang",
+  "name": "SceneVox - Film Distribution Platform",
+  "short_name": "SceneVox",
   "description": "Turn your films into fortune with professional distribution and monetization",
   "start_url": "/",
   "display": "standalone",

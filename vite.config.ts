@@ -14,13 +14,15 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     mode === 'development' &&
-    componentTagger(),
+    componentTagger({
+      disableBadge: true  // Add this line to disable the Lovable badge
+    }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'robots.txt', 'lovable-uploads/*.png'],
       manifest: {
         name: "SceneVox - Film Distribution Platform",
-        short_name: "MoodSwang",
+        short_name: "SceneVox",
         description: "Turn your films into fortune with professional distribution and monetization",
         theme_color: "#FFCC00",
         background_color: "#000000",
