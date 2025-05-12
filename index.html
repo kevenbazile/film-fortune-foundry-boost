@@ -34,6 +34,9 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/icons/icon-192x192.png" />
     <link rel="apple-touch-icon" sizes="167x167" href="/icons/icon-152x152.png" />
     
+    <!-- Apple splash screens -->
+    <link rel="apple-touch-startup-image" href="/icons/icon-512x512.png" />
+    
     <!-- Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-72x72.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/icons/icon-72x72.png" />
@@ -61,6 +64,23 @@
             });
         });
       }
+    </script>
+    
+    <!-- PWA Installation Detection -->
+    <script>
+      // Check if the app is already installed
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('Application is running in standalone mode (installed)');
+      }
+      
+      // Listen for changes to display mode
+      window.matchMedia('(display-mode: standalone)').addEventListener('change', (evt) => {
+        if (evt.matches) {
+          console.log('Application was installed and is now in standalone mode');
+        } else {
+          console.log('Application is running in browser');
+        }
+      });
     </script>
   </body>
 </html>

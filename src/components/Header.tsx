@@ -7,6 +7,7 @@ import { Menu, LogIn, User as UserIcon } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User as SupabaseUser } from "@supabase/supabase-js";
+import PWAInstallPrompt from "./PWAInstallPrompt";
 
 const Header = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -92,6 +93,7 @@ const Header = () => {
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center space-x-4">
+            <PWAInstallPrompt />
             {isAuthenticated ? (
               <>
                 <Button variant="outline" size="sm" onClick={handleLogout}>
@@ -142,6 +144,7 @@ const Header = () => {
                     </Link>
                   ))}
                   <div className="pt-4 space-y-4">
+                    <PWAInstallPrompt />
                     {isAuthenticated ? (
                       <>
                         <Button variant="outline" className="w-full" onClick={handleLogout}>
