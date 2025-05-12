@@ -64,4 +64,3 @@ export const useChatLogic = (userId: string, isInitiallyMinimized: boolean = tru
     currentRoomId
   };
 };
-

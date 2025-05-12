@@ -22,8 +22,10 @@ import { supabase } from "./integrations/supabase/client";
 import { toast } from "./components/ui/use-toast";
 import Subscription from "./pages/Subscription";
 
-// Lazy load the AIChatBot component
-const AIChatBot = lazy(() => import("./components/dashboard/filmmaker/chat/AIChatBot").then(module => ({ default: module.AIChatBot })));
+// Lazy load the AIChatBot component - using dynamic import
+const AIChatBot = lazy(() => 
+  import("./components/dashboard/filmmaker/chat/AIChatBot")
+);
 
 const queryClient = new QueryClient();
 

@@ -4,4 +4,3 @@
  * This file is kept for backward compatibility
  */
 export { default as AIChatBot } from './chat/AIChatBot';
-

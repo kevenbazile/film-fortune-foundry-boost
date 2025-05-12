@@ -92,4 +92,3 @@ export const AIChatBot = ({ userId, isMinimized: initialMinimized = true }: AICh
 
 // Export as default as well for lazy loading
 export default AIChatBot;
-
