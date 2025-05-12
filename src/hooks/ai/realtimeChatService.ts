@@ -1,6 +1,5 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { Message } from './types';
 
 // Send a message to the chat room
 export const sendMessageToRoom = async (roomId: string, content: string, senderId: string) => {
