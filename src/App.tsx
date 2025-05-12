@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense, useEffect } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import HowItWorks from "./pages/HowItWorks";
@@ -14,13 +15,15 @@ import AuthGuard from "./components/AuthGuard";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import { AuthProvider } from "./context/AuthContext";
-import { useEffect } from "react";
 import { ensureStorageBuckets } from "./integrations/supabase/storage";
 import PayPalSuccessHandler from "./components/PayPalSuccessHandler";
 import { useAuth } from "./context/AuthContext";
 import { supabase } from "./integrations/supabase/client";
 import { toast } from "./components/ui/use-toast";
 import Subscription from "./pages/Subscription";
+
+// Lazy load the AIChatBot component
+const AIChatBot = lazy(() => import("./components/dashboard/filmmaker/chat/AIChatBot"));
 
 const queryClient = new QueryClient();
 
@@ -91,15 +94,6 @@ const AppContent = () => {
     };
   }, [user?.id]);
 
-  // Only render the AI chatbot for authenticated users
-  const renderAIChatBot = () => {
-    if (user?.id) {
-      const { AIChatBot } = require("./components/dashboard/filmmaker/chat/AIChatBot");
-      return <AIChatBot userId={user.id} />;
-    }
-    return null;
-  };
-
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -129,7 +123,11 @@ const AppContent = () => {
         </Routes>
       </main>
       <Footer />
-      {renderAIChatBot()}
+      {user?.id && (
+        <Suspense fallback={<div className="fixed bottom-4 right-4 p-4 bg-background shadow-lg rounded-lg">Loading chat...</div>}>
+          <AIChatBot userId={user.id} />
+        </Suspense>
+      )}
     </div>
   );
 };
@@ -149,3 +147,4 @@ const App = () => (
 );
 
 export default App;
+
