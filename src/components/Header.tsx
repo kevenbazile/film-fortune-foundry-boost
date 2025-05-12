@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, LogIn, User as UserIcon } from "lucide-react";
+import { Menu, LogIn, User as UserIcon, Download } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Session, User as SupabaseUser } from "@supabase/supabase-js";
@@ -144,7 +144,9 @@ const Header = () => {
                     </Link>
                   ))}
                   <div className="pt-4 space-y-4">
-                    <PWAInstallPrompt />
+                    <div className="mb-2">
+                      <PWAInstallPrompt />
+                    </div>
                     {isAuthenticated ? (
                       <>
                         <Button variant="outline" className="w-full" onClick={handleLogout}>
