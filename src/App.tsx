@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { lazy, Suspense, useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import HowItWorks from "./pages/HowItWorks";
@@ -21,9 +21,8 @@ import { useAuth } from "./context/AuthContext";
 import { supabase } from "./integrations/supabase/client";
 import { toast } from "./components/ui/use-toast";
 import Subscription from "./pages/Subscription";
-
-// Lazy load the AIChatBot component - using ESM dynamic import
-const AIChatBot = lazy(() => import("./components/dashboard/filmmaker/chat/AIChatBot"));
+import { AIChatBot } from "./components/dashboard/filmmaker/chat/AIChatBot";
+import PWAInstallPrompt from "./components/PWAInstallPrompt";
 
 const queryClient = new QueryClient();
 
@@ -123,6 +122,7 @@ const AppContent = () => {
         </Routes>
       </main>
       <Footer />
+      <PWAInstallPrompt />
       {user?.id && (
         <Suspense fallback={<div className="fixed bottom-4 right-4 p-4 bg-background shadow-lg rounded-lg">Loading chat...</div>}>
           <AIChatBot userId={user.id} />

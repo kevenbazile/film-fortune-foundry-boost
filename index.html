@@ -50,37 +50,5 @@
     <!-- IMPORTANT: DO NOT REMOVE THIS SCRIPT TAG OR THIS VERY COMMENT! -->
     <script src="https://cdn.gpteng.co/gptengineer.js" type="module"></script>
     <script type="module" src="/src/main.tsx"></script>
-
-    <!-- Service Worker Registration -->
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((registration) => {
-              console.log('ServiceWorker registration successful with scope:', registration.scope);
-            })
-            .catch((error) => {
-              console.error('ServiceWorker registration failed:', error);
-            });
-        });
-      }
-    </script>
-    
-    <!-- PWA Installation Detection -->
-    <script>
-      // Check if the app is already installed
-      if (window.matchMedia('(display-mode: standalone)').matches) {
-        console.log('Application is running in standalone mode (installed)');
-      }
-      
-      // Listen for changes to display mode
-      window.matchMedia('(display-mode: standalone)').addEventListener('change', (evt) => {
-        if (evt.matches) {
-          console.log('Application was installed and is now in standalone mode');
-        } else {
-          console.log('Application is running in browser');
-        }
-      });
-    </script>
   </body>
 </html>
