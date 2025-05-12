@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Info } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const HeroSection = () => {
@@ -13,15 +13,17 @@ const HeroSection = () => {
             Turn Your Film Into Fortune
           </h1>
           <p className="text-xl md:text-2xl mb-8 opacity-90">
-            We distribute and monetize your films,short films and trailers while you focus on creating.
+            We distribute and monetize your films, short films and trailers while you focus on creating.
             Join successful filmmakers who are earning real revenue through our platform.
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Button size="lg" className="gap-2" asChild>
-              <Link to="/how-it-works">Submit Your Project <ArrowRight className="h-4 w-4" /></Link>
+              <Link to="/how-it-works">Learn How It Works <ArrowRight className="h-4 w-4" /></Link>
             </Button>
             <Button size="lg" variant="outline" className="gap-2 bg-white/10" asChild>
-              <Link to="/how-it-works">Explore Our Services</Link>
+              <Link to="/auth">
+                Sign Up to Submit Your Film <Info className="ml-2 h-4 w-4" />
+              </Link>
             </Button>
           </div>
         </div>

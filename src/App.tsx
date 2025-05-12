@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import HowItWorks from "./pages/HowItWorks";
@@ -17,10 +17,10 @@ import { AuthProvider } from "./context/AuthContext";
 import { useEffect } from "react";
 import { ensureStorageBuckets } from "./integrations/supabase/storage";
 import PayPalSuccessHandler from "./components/PayPalSuccessHandler";
-import { AIChatBot } from "./components/dashboard/filmmaker/AIChatBot";
 import { useAuth } from "./context/AuthContext";
 import { supabase } from "./integrations/supabase/client";
 import { toast } from "./components/ui/use-toast";
+import Subscription from "./pages/Subscription";
 
 const queryClient = new QueryClient();
 
@@ -91,6 +91,15 @@ const AppContent = () => {
     };
   }, [user?.id]);
 
+  // Only render the AI chatbot for authenticated users
+  const renderAIChatBot = () => {
+    if (user?.id) {
+      const { AIChatBot } = require("./components/dashboard/filmmaker/chat/AIChatBot");
+      return <AIChatBot userId={user.id} />;
+    }
+    return null;
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -102,7 +111,7 @@ const AppContent = () => {
           <Route path="/auth" element={<Auth />} />
           <Route path="/subscription" element={
             <AuthGuard>
-              <Navigate to="/dashboard?tab=packages" replace />
+              <Subscription />
             </AuthGuard>
           } />
           <Route path="/dashboard" element={
@@ -120,9 +129,7 @@ const AppContent = () => {
         </Routes>
       </main>
       <Footer />
-      <AuthGuard>
-        <AIChatBot userId={user?.id || ""} /> {/* Use actual user ID from auth context */}
-      </AuthGuard>
+      {renderAIChatBot()}
     </div>
   );
 };
@@ -135,7 +142,6 @@ const App = () => (
       <AuthProvider>
         <BrowserRouter>
           <AppContent />
-          
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>

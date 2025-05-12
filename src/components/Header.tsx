@@ -54,14 +54,15 @@ const Header = () => {
 
   const isAuthenticated = !!session;
 
+  // Navigation items for all users - public routes
   const publicNavItems = [
     { name: "Home", path: "/" },
     { name: "How It Works", path: "/how-it-works" },
   ];
 
+  // Additional navigation items for authenticated users
   const authenticatedNavItems = [
-    { name: "Home", path: "/" },
-    { name: "How It Works", path: "/how-it-works" },
+    ...publicNavItems,
     { name: "My Dashboard", path: "/dashboard" },
   ];
 
@@ -109,6 +110,11 @@ const Header = () => {
                   <Link to="/auth">
                     <LogIn className="w-4 h-4 mr-2" />
                     Login / Sign Up
+                  </Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link to="/how-it-works">
+                    Learn More
                   </Link>
                 </Button>
               </>

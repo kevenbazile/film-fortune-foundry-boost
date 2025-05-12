@@ -2,7 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, LogIn } from "lucide-react";
 
 const CallToAction = () => {
   return (
@@ -15,10 +15,12 @@ const CallToAction = () => {
         </p>
         <div className="flex flex-wrap gap-4 justify-center">
           <Button size="lg" variant="secondary" className="gap-2" asChild>
-            <Link to="/submit-film">Submit Your Project <ArrowRight className="h-4 w-4" /></Link>
+            <Link to="/auth">
+              <LogIn className="h-4 w-4 mr-1" /> Sign Up to Submit Your Project
+            </Link>
           </Button>
           <Button size="lg" variant="outline" className="bg-white/10 gap-2" asChild>
-            <Link to="/contact">Contact Our Team</Link>
+            <Link to="/how-it-works">Learn More <ArrowRight className="h-4 w-4" /></Link>
           </Button>
         </div>
       </div>
