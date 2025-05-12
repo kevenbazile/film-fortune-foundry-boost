@@ -11,7 +11,7 @@ import { useChatLogic } from './useChatLogic';
 import { AIChatBotProps } from './types';
 
 // Create the component with both named export and default export for compatibility
-export const AIChatBot = ({ userId, isMinimized: initialMinimized = true }: AIChatBotProps) => {
+export const AIChatBot: React.FC<AIChatBotProps> = ({ userId, isMinimized: initialMinimized = true }) => {
   const { user } = useAuth();
   
   const {
